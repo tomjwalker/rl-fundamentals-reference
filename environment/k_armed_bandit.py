@@ -161,7 +161,6 @@ class KArmedTestbed:
             bandit.show(title=title)
 
 
-
 def main():
     """
     Test the k-armed bandit environment.
