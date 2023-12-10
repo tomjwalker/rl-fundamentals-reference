@@ -1,232 +1,173 @@
-"""
-Jack's Car Rental environment - from Sutton and Barto, 2018, p. 81.
-
-TODO:
-  - Random seed, for reproducibility
-"""
-
-
+import math
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 
 
-class RentalLocation:
-    def __init__(
-            self,
-            expected_rentals,
-            expected_returns,
-            max_cars=20,
-            max_move_cars=5,
-            rental_reward=10,
-            move_cost=2,
-            initial_cars=None,
-            name=None,
-    ):
+def get_poisson_prob(x, lam, high):
+    """
+    - if X > high, then probability is as per a Poisson distribution, p(X|lam)
+    - if X = high, then the probability is the poisson probability for P(X=high|lam) + the sum of all further
+        probabilities in the tail, to infinity, as P(X > high) = 0, per the constraints of the problem
+    """
 
-        self.max_cars = max_cars
-        self.max_move_cars = max_move_cars
-        self.expected_rentals = expected_rentals
-        self.expected_returns = expected_returns
-        self.rental_reward = rental_reward
-        self.move_cost = move_cost
-        self.name = name
+    if x < high:
+        return np.exp(-lam) * (lam ** x) / math.factorial(x)
+    elif x == high:
+        # Get sum of all probabilities up to, but excluding, high
+        prob = 0
+        for i in range(x):
+            prob += np.exp(-lam) * (lam ** i) / math.factorial(i)
+        # Probability of tail, including and beyond high is 1 - prob
+        return 1 - prob
+    else:
+        return 0
 
-        if initial_cars is None:
-            self.cars = np.random.randint(0, max_cars + 1)
-        else:
-            self.cars = initial_cars
 
-    def get_car_returns(self):
-        """
-        - Determines the number of cars returned to this location - an int from a Poisson distribution with mean
-        expected_returns.
-        - Updates the number of cars at this location.
+class Location:
 
-        Returns:
-            int: The number of cars returned.
-        """
-        returned_cars = np.random.poisson(self.expected_returns)
-        # Max returnable cars is capped to the difference between the max number of cars and the current number
-        returned_cars = min(returned_cars, self.max_cars - self.cars)
-
-        # Update number of cars
-        self.cars += returned_cars
-
-    def get_rentals(self):
-        """
-        Get the number of cars rented from this location.
-
-        Returns:
-            int: The number of cars rented.
-        """
-        rentals = np.random.poisson(self.expected_rentals)
-        rentals = min(rentals, self.cars)
-
-        # Update number of cars
-        self.cars -= rentals
-
-        return rentals
-
-    def move_cars(self, action):
-        """
-        Move cars from this location to another.
-
-        Args:
-            action (int): The number of cars to move; positive => FROM this location TO another location.
-        """
-        # The number of cars to move is capped by the number of cars at this location and the max cars moved
-        # - e.g. 1: want to move 4 cars, but there are only 3 cars at this location => move 3 cars
-        # - e.g. 2: want to move 6 cars, but the max cars moved is 5 => move 5 cars
-        num_cars = min(action, self.cars, self.max_move_cars)
-        self.cars -= num_cars
-        return num_cars
-
-    def step(self, action):
-        """
-        Take a step in the environment.
-
-        Args:
-            action (int): The number of cars to move; positive => FROM this location TO another location.
-
-        Returns:
-            int: The reward for the step.
-        """
-        # Get returned cars from the previous day (poisson distributed) and update the car count
-        self.get_car_returns()
-
-        # TODO: reorder so move car decision before random return? Harder problem?
-        # Move cars overnight, before business hours
-        num_cars_moved = self.move_cars(action)
-
-        # Get rentals during the day
-        num_rentals = self.get_rentals()
-
-        # Calculate reward
-        reward = self.rental_reward * num_rentals - self.move_cost * num_cars_moved
-
-        # Package secondary metrics for logging
-        info = {"num_rentals": num_rentals, "num_cars_moved": num_cars_moved}
-
-        return reward, info
+    def __init__(self, mean_requests, mean_returns):
+        self.mean_requests = mean_requests
+        self.mean_returns = mean_returns
 
 
 class JacksCarRental:
 
-    def __init__(
-            self,
-            location_1_params=None,
-            location_2_params=None,
-    ):
+    def __init__(self, max_cars=20, max_move_cars=5, rental_reward=10, move_cost=2, random_seed=None):
+        self.max_cars = max_cars
+        self.max_move_cars = max_move_cars
+        self.rental_reward = rental_reward
+        self.move_cost = move_cost
+        self.random_seed = random_seed
+        self.locations = self._init_locations()
 
-        # Default parameters
-        if location_2_params is None:
-            location_2_params = {"expected_rentals": 4, "expected_returns": 2, "initial_cars": 10}
-        if location_1_params is None:
-            location_1_params = {"expected_rentals": 3, "expected_returns": 3, "initial_cars": 10}
-
-        self.rental_location_1 = RentalLocation(
-            expected_rentals=location_1_params["expected_rentals"],
-            expected_returns=location_1_params["expected_returns"],
-            initial_cars=location_1_params["initial_cars"],
-            name="location_1",
-        )
-        self.rental_location_2 = RentalLocation(
-            expected_rentals=location_2_params["expected_rentals"],
-            expected_returns=location_2_params["expected_returns"],
-            initial_cars=location_2_params["initial_cars"],
-            name="location_2",
-        )
-
-    def step(self, action):
+    @staticmethod
+    def _init_locations():
         """
-        Take a step in the environment. Runs the step functions for each rental location, gets the reward (rentals
-        less moving costs) for each location, then returns the combined reward.
+        Initialise the rental locations.
+        """
+        return [
+            Location(mean_requests=3, mean_returns=3),
+            Location(mean_requests=4, mean_returns=2),
+        ]
+
+    def get_expected_reward(self, state, action):
+        """
+        Get the expected reward for a given state and action.
+
+        The state s = (n1, n2) is the number of cars at each location at the end of the day.
+        The expected reward is a function of the number of cars available the following day, in the following way:
+        - cars available at the start of the day, after overnight distribution:
+            n1'' = n1 - a
+            n2'' = n2 + a
+        - The expected reward is then:
+        r(s, a) = rental_reward * sum_over_possible_X1s(X1 * p(X1|lam, N1''))
+            + sum_over_possible_X2s(X2 * p(X2|lam, N2''))
+            - move_cost * abs(a)
 
         Args:
-            action (int): The number of cars to move from location 1 to location 2 (+ve if net efflux, -ve otherwise).
+            state (tuple): The state: number of cars at end of day: (location 1, location 2).
+            action (int): The action, ranging from -5 to 5 (+ve = move cars from location 1 to location 2, -ve = move
+                cars from location 2 to location 1).
+
+        Returns:
+            float: The expected reward.
         """
+        expected_reward = 0
+        for location_idx, location in enumerate(self.locations):
+            # Get the number of cars available at the start of the day, after overnight distribution (n'')
+            if location_idx == 0:
+                cars_available = state[0] - action
+            else:
+                cars_available = state[1] + action
+            # assert cars_available is of type int
+            # Get the expected reward for this location: sum over all possible Xs (number of rentals)
+            for x in range(cars_available + 1):
+                expected_reward += self.rental_reward * x * get_poisson_prob(x, location.mean_requests, cars_available)
+        # Subtract the cost of moving cars
+        expected_reward -= self.move_cost * abs(action)
+        return expected_reward
 
-        reward = 0
-        num_rentals = {"location_1": 0, "location_2": 0}
-        num_cars_moved = {"location_1": 0, "location_2": 0}
+    def get_state_transition_probs(self, next_state, state, action):
+        """
+        Get the probability of transitioning from state to next_state, given action.
 
-        # Step through each location
-        for rental_location in [self.rental_location_1, self.rental_location_2]:
-
-            name = rental_location.name
-
-            # Step through each location
-            step_reward, info = rental_location.step(action)
-            reward += step_reward
-
-            # Log secondary metrics
-            num_rentals[name] = info["num_rentals"]
-            num_cars_moved[name] = info["num_cars_moved"]
-            info = {"num_rentals": num_rentals, "num_cars_moved": num_cars_moved}
-
-        return reward, info
+        Calculated the following way:
+        - cars available at the start of the day, after overnight distribution:
+            n1'' = n1 - a
+            n2'' = n2 + a
+        - Let the next state s' = (n1', n2') be the number of cars at each location at the end of the day.
+        - Let the Poisson distributed random variables X1 and X2 be the number of rentals at each location.
+        - Let the Poisson distributed random variables Y1 and Y2 be the number of returns at each location.
+        - So that the number of cars at each location at the end of the day is:
+            N1' = n1'' + Y1 - X1
+            N2' = n2'' + Y2 - X2
+        - Then the probability of transitioning from state to next_state is:
+            p(s'|s, a) = p(N1', N2'|n1'', n2'')
+        - With independence assumptions, this is:
+            p(s'|s, a) = p(N1'|N1'') * p(N2'|N2'')
+        - The probability of starting the day with N1'' cars and finishing with N1' cars is:
+            p(N1'|N1'') = sum_over_possible_X1s(p(X1|lam_rent, N1'') * p(Y1 = N1' - N1'' + X1|lam_return,
+            N1_max - N1'' + X1))
+        - (The same applies for N2)
+        """
+        # Get the number of cars available at the start of the day, s'' = (n1'', n2'')
+        state_start_day = (state[0] - action, state[1] + action)
+        # Get the number of cars at the end of the day, s' = (n1', n2')
+        state_end_day = next_state
+        # Get the probability of transitioning from state to next_state
+        prob = 1
+        for location_idx, location in enumerate(self.locations):
+            # Get the number of cars at the start of the day, after overnight distribution (n'')
+            cars_available = state_start_day[location_idx]
+            # Get the number of cars at the end of the day (n')
+            cars_end_day = state_end_day[location_idx]
+            # Get the probability of transitioning from n'' to n'
+            prob_for_location = 0
+            for x in range(cars_available + 1):
+                prob_x = get_poisson_prob(x, location.mean_requests, cars_available)
+                num_returns = cars_end_day - cars_available + x
+                if num_returns < 0:
+                    # If there are more rentals than cars available, then the probability is 0
+                    prob_y = 0
+                else:
+                    prob_y = get_poisson_prob((cars_end_day - cars_available + x), location.mean_returns,
+                                              (self.max_cars - cars_available + x))
+                prob_for_location += prob_x * prob_y
+            prob *= prob_for_location
+        return prob
 
 
 def main():
+    # ## Testing truncated Poisson distribution
+    # # With a lambda of 3, and an X high of 10, plot the pmf for X = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+    # # and show that the sum of all probabilities is 1
+    # lam = 8
+    # high = 10
+    # probs = []
+    # for x in range(high + 1):
+    #     probs.append(get_poisson_prob(x, lam, high))
+    # # Plot the pmf
+    #
+    # plt.bar(range(high + 1), probs)
+    # plt.title(f"Poisson distribution with lambda={lam}. Sum of probabilities is {sum(probs)}")
+    # plt.show()
+    # # Show that the sum of all probabilities is 1
+    # print(sum(probs))
 
-    """
-    Test function, which checks the Jack's Car Rental environment runs correctly.
-
-    - Creates an environment with default parameters.
-    - Runs 10 steps, with random actions.
-    - Plots the number of cars at each location after each step.
-    - Plots the reward for each step.
-    """
-
-    # Create environment
-    env = JacksCarRental(
-        location_1_params={"expected_rentals": 3, "expected_returns": 3, "initial_cars": 10},
-        location_2_params={"expected_rentals": 4, "expected_returns": 2, "initial_cars": 10},
-    )
-
-    # Run 10 steps
-    num_steps = 10
-    rewards = []
-    cars_1 = []
-    cars_2 = []
-    rented_cars_1 = []
-    rented_cars_2 = []
-    moved_cars_1 = []
-    moved_cars_2 = []
-    for _ in range(num_steps):
-        action = np.random.randint(-5, 6)
-        reward, info = env.step(action)
-        rewards.append(reward)
-        cars_1.append(env.rental_location_1.cars)
-        cars_2.append(env.rental_location_2.cars)
-        rented_cars_1.append(info["num_rentals"]["location_1"])
-        rented_cars_2.append(info["num_rentals"]["location_2"])
-        moved_cars_1.append(info["num_cars_moved"]["location_1"])
-        moved_cars_2.append(info["num_cars_moved"]["location_2"])
-    total_rented = np.array(rented_cars_1) + np.array(rented_cars_2)
-
-    # Plot results
-    # A single figure with 2 subplots: subplot 1: cars at location 1 and 2; subplot 2: reward
-    fig, axs = plt.subplots(3, 1)
-    axs[0].plot(cars_1, label="Location 1")
-    axs[0].plot(cars_2, label="Location 2")
-    axs[0].set_xlabel("Step")
-    axs[0].set_ylabel("Number of cars")
-    axs[0].legend()
-    axs[1].plot(rewards, label="Reward")
-    axs[1].set_xlabel("Step")
-    axs[1].set_ylabel("Reward")
-    axs[2].plot(rented_cars_1, label="Rented cars from location 1")
-    axs[2].plot(rented_cars_2, label="Rented cars from location 2")
-    axs[2].plot(total_rented, label="Total rented cars")
-    axs[2].plot(moved_cars_1, label="Moved cars from location 1")
-    axs[2].plot(moved_cars_2, label="Moved cars from location 2")
-    axs[2].set_xlabel("Step")
-    axs[2].set_ylabel("Number of cars rented/moved")
-    axs[2].legend()
-    plt.show()
+    ## Testing Jack's Car Rental environment
+    # Create the environment
+    env = JacksCarRental()
+    # Get the expected reward for a given state and action
+    state = (10, 10)
+    action = 3
+    expected_reward = env.get_expected_reward(state, action)
+    print(f"Expected reward for state {state} and action {action} is {expected_reward}")
+    # Get the probability of transitioning from state to next_state, given action
+    next_state = (5, 15)
+    prob = env.get_state_transition_probs(next_state, state, action)
+    print(f"Probability of transitioning from state {state} to state {next_state} given action {action} is {prob}")
 
 
 if __name__ == "__main__":
