@@ -3,8 +3,10 @@ This module contains the one-armed bandit and k-armed bandit environments.
 """
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
+matplotlib.use('TkAgg')
 
 
 class OneArmedBandit:
