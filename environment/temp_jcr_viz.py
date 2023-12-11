@@ -36,7 +36,7 @@ def plot_policies():
     policies = {}
     policies[0] = np.zeros((20, 20))
     for i in range(4):
-        policy_filepath = os.path.join(POLICY_DIR, f"policy_improvement_{i}.npy")
+        policy_filepath = os.path.join(POLICY_DIR, f"policy_evaluation_{i}.npy")
         policy = np.load(policy_filepath)
         policies[i+1] = policy
     value_filepath = os.path.join(VALUE_DIR, f"policy_evaluation_{i}.npy")

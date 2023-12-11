@@ -26,27 +26,23 @@ class PolicyIteration:
         while True:
             delta = 0
             loop_idx = 0
+            expected_value_matrix = self.env.get_expected_value(self.value, self.gamma)
             for state_1 in range(self.max_cars + 1):
                 for state_2 in range(self.max_cars + 1):
                     old_value = self.value[state_1, state_2]
                     action = self.policy[state_1, state_2]
-                    # Initialise expected return with the expected reward. The value component calculated and
-                    # appended in the following loop
-                    expected_return = self.env.get_expected_reward(
-                        state=(state_1, state_2), action=action
-                    )
-                    for new_state_1 in range(self.max_cars + 1):
-                        for new_state_2 in range(self.max_cars + 1):
-                            prob_new_state = self.env.get_state_transition_probs(
-                                next_state=(new_state_1, new_state_2),
-                                state=(state_1, state_2),
-                                action=action,
-                            )
-                            expected_return += (
-                                    self.gamma * prob_new_state * self.value[new_state_1, new_state_2]
-                            )
-                    self.value[state_1, state_2] = expected_return
+                    state_1_next_day = state_1 - action
+                    state_2_next_day = state_2 + action
+                    # If these new states fall outside the range of possible states, then continue
+                    if state_1_next_day < 0 or state_1_next_day > self.max_cars or \
+                            state_2_next_day < 0 or state_2_next_day > self.max_cars:
+                        continue
 
+                    # TODO: roll this into env class? Somehow make cleaner for homework script
+                    expected_return = expected_value_matrix[state_1_next_day, state_2_next_day] - self.env.move_cost * \
+                        np.abs(action)
+
+                    self.value[state_1, state_2] = expected_return
                     delta = max(delta, np.abs(old_value - self.value[state_1, state_2]))
 
             print(f"Policy evaluation: loop {loop_idx}, delta = {delta}")
@@ -58,24 +54,21 @@ class PolicyIteration:
     def policy_improvement(self):
         policy_stable = True
         available_actions = np.arange(-self.env.max_move_cars, self.env.max_move_cars + 1)
+        expected_value_matrix = self.env.get_expected_value(self.value, self.gamma)
         for state_1 in range(self.max_cars + 1):
             for state_2 in range(self.max_cars + 1):
                 old_action = self.policy[state_1, state_2]
-                action_returns = np.zeros_like(available_actions)
+                action_returns = [-np.inf] * len(available_actions)
                 for action_idx, action in enumerate(available_actions):
-                    expected_reward = self.env.get_expected_reward(
-                        state=(state_1, state_2), action=action
-                    )
-                    for new_state_1 in range(self.max_cars + 1):
-                        for new_state_2 in range(self.max_cars + 1):
-                            prob_new_state = self.env.get_state_transition_probs(
-                                next_state=(new_state_1, new_state_2),
-                                state=(state_1, state_2),
-                                action=action,
-                            )
-                            expected_reward += (
-                                    self.gamma * prob_new_state * self.value[new_state_1, new_state_2]
-                            )
+                    state_1_next_day = state_1 - action
+                    state_2_next_day = state_2 + action
+                    # If these new states fall outside the range of possible states, then continue
+                    if state_1_next_day < 0 or state_1_next_day > self.max_cars or \
+                            state_2_next_day < 0 or state_2_next_day > self.max_cars:
+                        continue
+
+                    expected_reward = expected_value_matrix[state_1_next_day, state_2_next_day] - self.env.move_cost * \
+                        np.abs(action)
                     action_returns[action_idx] = expected_reward
                 self.policy[state_1, state_2] = available_actions[np.argmax(action_returns)]
                 if old_action != self.policy[state_1, state_2]:
@@ -97,7 +90,6 @@ class PolicyIteration:
         return self.policy, self.value
 
 
-
 if __name__ == "__main__":
     env = JacksCarRental()
     policy_iteration = PolicyIteration(env)
@@ -115,4 +107,3 @@ if __name__ == "__main__":
     plt.xlabel("Location 2")
     plt.ylabel("Location 1")
     plt.show()
-
