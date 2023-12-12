@@ -115,7 +115,6 @@ class KArmedBandit:
         return ax
 
 
-
 class KArmedTestbed:
     """
     A testbed for k-armed bandit algorithms: contains a set of `num_runs` k-armed bandits, to test bandit algorithms
