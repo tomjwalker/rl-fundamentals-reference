@@ -25,7 +25,7 @@ class OneArmedBandit:
         self.mean = mean
         self.std = std
 
-    def get_reward(self):
+    def step(self):
         """
         Get a reward from the one-armed bandit.
 
@@ -69,7 +69,7 @@ class KArmedBandit:
         bandits = [OneArmedBandit(mean, self.bandit_std) for mean in k_means]
         return bandits
 
-    def get_reward(self, action):
+    def step(self, action):
         """
         Get a reward from the k-armed bandit.
 
@@ -79,7 +79,7 @@ class KArmedBandit:
         Returns:
             float: The reward.
         """
-        return self.bandits[action].get_reward()
+        return self.bandits[action].step()
 
     def __str__(self):
         return f"KArmedBandit(k={self.k}, k_mean={self.k_mean}, k_std={self.k_std}, bandit_std={self.bandit_std})"
@@ -87,24 +87,29 @@ class KArmedBandit:
     def __repr__(self):
         return str(self)
 
-    def show(self, title=None):
+    def show(self, title=None, ax=None):
         """
         Violin plot of the distributions of the bandits.
+
+        If `ax` is not None, then plot on the given axis.
         """
-        # Add a horizontal dashed line in the background at y=0. The violin plots will be plotted on top of this.
-        plt.axhline(y=0, color="black", linestyle="--", alpha=0.25)
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(10, 10))
 
         # Sample 250 points from each of the bandits, and plot the distributions of these points
         data = []
         for bandit in self.bandits:
-            samples = [bandit.get_reward() for _ in range(250)]
+            samples = [bandit.step() for _ in range(250)]
             data.append(samples)
-        sns.violinplot(data=data)
 
+        sns.violinplot(data=data, ax=ax)
         if title is not None:
-            plt.title(title)
+            ax.set_title(title)
 
-        plt.show()
+        return ax
+        #
+        # # Add a horizontal dashed line in the background at y=0. The violin plots will be plotted on top of this.
+        # plt.axhline(y=0, color="black", linestyle="--", alpha=0.25, ax=ax)
 
 
 class KArmedTestbed:
@@ -156,18 +161,37 @@ class KArmedTestbed:
 
     def show(self):
         """
-        For each run, runs KArmedBandit.show(). Adds a title to each plot with the run number.
+        For each run, runs KArmedBandit.show().
+
+        Creates a single figure, with a 2x3 subplot layout, with the following subplots:
+        - If self.num_runs <= 6, plots all bandits in the subplots
+        - If self.num_runs > 6, samples 6 bandits randomly and plots them in the subplots
         """
-        for i, bandit in enumerate(self.bandits):
-            title = f"Run {i}"
-            bandit.show(title=title)
+        if self.num_runs <= 6:
+            num_rows = 2
+            num_cols = 3
+            fig, ax = plt.subplots(num_rows, num_cols, figsize=(20, 10))
+            for i in range(num_rows):
+                for j in range(num_cols):
+                    run = i * num_cols + j
+                    self.bandits[run].show(title=f"Run {run}", ax=ax[i, j])
+        else:
+            num_rows = 2
+            num_cols = 3
+            fig, ax = plt.subplots(num_rows, num_cols, figsize=(20, 10))
+            for i in range(num_rows):
+                for j in range(num_cols):
+                    run = np.random.randint(0, self.num_runs)
+                    self.bandits[run].show(title=f"Run {run}", ax=ax[i, j])
+
+        plt.show()
 
 
 def main():
     """
     Test the k-armed bandit environment.
     """
-    k_armed_testbed = KArmedTestbed(num_runs=3, k=10, k_mean=0, k_std=1, bandit_std=1, with_seed=True)
+    k_armed_testbed = KArmedTestbed(num_runs=15, k=10, k_mean=0, k_std=1, bandit_std=1, with_seed=True)
     k_armed_testbed.show()
 
 
