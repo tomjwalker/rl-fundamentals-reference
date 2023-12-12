@@ -106,10 +106,14 @@ class KArmedBandit:
         if title is not None:
             ax.set_title(title)
 
+        # Add a horizontal dashed line in the background at y=0. The violin plots will be plotted on top of this.
+        ax.axhline(y=0, color="black", linestyle="--")
+
+        # Set y-axis limits
+        ax.set_ylim(-6, 6)
+
         return ax
-        #
-        # # Add a horizontal dashed line in the background at y=0. The violin plots will be plotted on top of this.
-        # plt.axhline(y=0, color="black", linestyle="--", alpha=0.25, ax=ax)
+
 
 
 class KArmedTestbed:
