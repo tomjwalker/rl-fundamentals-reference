@@ -22,11 +22,13 @@ class UpperConfidenceBound(EpsilonGreedy):
         # Get the action counts
         action_counts = self.action_counts
 
+        # TODO: add this into the (epsilon) greedy algorithm?
         # If any actions have not been taken, take them
         if np.any(action_counts == 0):
             return np.random.choice(np.where(action_counts == 0)[0])
 
         # Otherwise, take the argmax of the q-values plus the exploration bonus
+        # TODO: check this is correct (specifically, t)
         exploration_bonus = self.c * np.sqrt(np.log(np.sum(action_counts)) / action_counts)
         q_values = self.q_values + exploration_bonus
         return self._argmax(q_values)
