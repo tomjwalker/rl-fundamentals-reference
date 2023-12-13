@@ -2,7 +2,7 @@
 #    - Agent and environment instantiated separately, in a run() function / script?
 #    - `.train` method streamlined, better metric logging etc.
 #    - Seeding, for reproducibility?
-
+from environment.k_armed_bandit import KArmedTestbed
 
 import numpy as np
 import pandas as pd
@@ -10,12 +10,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 
-from environment.k_armed_bandit import KArmedTestbed
-
 
 class EpsilonGreedy:
 
-    def __init__(self, env, epsilon, max_steps=1000, initialisation="zeros"):
+    def __init__(self, env, epsilon, max_steps=1000, initialisation=0):
 
         self.env = env
         self.epsilon = epsilon
@@ -23,28 +21,22 @@ class EpsilonGreedy:
         self.num_actions = env.bandits[0].k    # Number of bandits in any of the k-armed bandits within the testbed
 
         # Initialise the q-values and action counts. This reset function will be used after each k-armed bandit run.
-        self.reset(initialisation="zeros")
+        self.initialisation = initialisation
+        self.q_values = None
+        self.action_counts = None
+        self.reset()
 
-    def _init_optimistic(self, initial_value=5):
-        """
-        Initialise the q-values optimistically, to encourage exploration.
-        """
-        return np.ones(self.num_actions) * initial_value
-
-    def reset(self, initialisation="zeros"):
+    def reset(self):
         """
         Reset the agent, by re-initialising the q-values and action counts.
-
-        Args:
-            initialisation (str): The initialisation method to use for the q-values.
         """
         # Initialise the q-values
-        if initialisation == "zeros":
+        if self.initialisation == 0:
             self.q_values = np.zeros(self.num_actions)
-        elif initialisation == "optimistic":
-            self.q_values = self._init_optimistic(initial_value=5)
+        elif self.initialisation > 0:
+            self.q_values = np.ones(self.num_actions) * self.initialisation
         else:
-            raise ValueError(f"Unrecognised initialisation: {initialisation}")
+            raise ValueError(f"Unrecognised initialisation: {self.initialisation}")
 
         # Initialise the action counts (N)
         self.action_counts = np.zeros(self.num_actions)
@@ -95,7 +87,7 @@ class EpsilonGreedy:
 
         for k_armed_bandit in self.env.bandits:
             # TODO: set max steps in agent, or env?
-            self.reset(initialisation="zeros")
+            self.reset()
             rewards = np.zeros(self.max_steps)
             optimal_action = [False] * self.max_steps
             for step in range(self.max_steps):
@@ -114,7 +106,7 @@ class EpsilonGreedy:
         return rewards_testbed, optimal_action_testbed
 
 
-def main():
+def epsilon_sweep_experiment():
     """
     Run the epsilon-greedy algorithm.
     """
@@ -143,7 +135,7 @@ def main():
         rewards_testbed, optimal_action_testbed = agent.train()
 
         mean_rewards = rewards_testbed.mean(axis=1)
-        std_rewards = rewards_testbed.std(axis=1)
+        # std_rewards = rewards_testbed.std(axis=1)
         results[plot_colour] = mean_rewards
 
         # Get % of time (over all runs) that the optimal action was taken
@@ -167,6 +159,55 @@ def main():
     print("done!")
 
 
-if __name__ == "__main__":
-    main()
+def initial_val_experiment():
+    """See effect of initialising optimistically with 5, vs 0"""
+    # Set the random seed
+    random_seed = 0
+    np.random.seed(random_seed)
 
+    # Initialise the k-armed bandits
+    num_runs = 100    # Final version: 2000
+    k = 10
+    k_mean = 0
+    k_std = 1
+    bandit_std = 1
+    env = KArmedTestbed(num_runs, k, k_mean, k_std, bandit_std, random_seed)
+
+    # Initialise the epsilon-greedy agent
+    runs = {"grey": {"init": 0, "epsilon": 0.1}, "blue": {"init": 5, "epsilon": 0}}    # {plot_colour: epsilon}
+    results = {k: [] for k in runs.keys()}
+    max_steps = 1000
+    fig, ax = plt.subplots(2, 1)
+    for plot_colour, params in runs.items():
+        print(f"Running epsilon-greedy with initialisation={params['init']}...")
+        agent = EpsilonGreedy(env, params["epsilon"], max_steps, params["init"])
+
+        # Train the agent
+        rewards_testbed, optimal_action_testbed = agent.train()
+
+        mean_rewards = rewards_testbed.mean(axis=1)
+        # std_rewards = rewards_testbed.std(axis=1)
+        results[plot_colour] = mean_rewards
+
+        # Get % of time (over all runs) that the optimal action was taken
+        optimal_action_fraction = optimal_action_testbed.mean(axis=1)
+
+        # Plot the results
+        ax[0].plot(mean_rewards, label=f"init={params['init']}", color=plot_colour)
+        ax[1].plot(optimal_action_fraction * 100, label=f"init={params['init']}", color=plot_colour)
+
+    # Plot the results
+    ax[0].set_title("Average reward over time")
+    ax[0].set_xlabel("Steps")
+    ax[0].set_ylabel("Average reward")
+    ax[0].legend()
+    ax[1].set_title("Optimal action % over time")
+    ax[1].set_xlabel("Steps")
+    ax[1].set_ylabel("Optimal action %")
+    ax[1].legend()
+    plt.show()
+
+
+if __name__ == "__main__":
+    # epsilon_sweep_experiment()
+    initial_val_experiment()
