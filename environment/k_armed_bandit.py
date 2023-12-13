@@ -54,7 +54,10 @@ class KArmedBandit:
         self.k_std = k_std
         self.bandit_std = bandit_std
         self.random_seed = random_seed
-        self.bandits = self._init_bandits()
+
+        self.bandits = None
+        self.best_action = None
+        self._init_bandits()
 
     def _init_bandits(self):
         """
@@ -66,8 +69,9 @@ class KArmedBandit:
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
         k_means = np.random.normal(self.k_mean, self.k_std, self.k)
-        bandits = [OneArmedBandit(mean, self.bandit_std) for mean in k_means]
-        return bandits
+
+        self.bandits = [OneArmedBandit(mean, self.bandit_std) for mean in k_means]
+        self.best_action = np.argmax(k_means)
 
     def step(self, action):
         """
