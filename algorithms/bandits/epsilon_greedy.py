@@ -41,7 +41,7 @@ class EpsilonGreedy:
         # Initialise the action counts (N)
         self.action_counts = np.zeros(self.num_actions)
 
-    def get_argmax(self, q_values):
+    def _argmax(self, q_values):
         """
         Get the argmax of the q-values. Splits ties randomly.
 
@@ -64,7 +64,7 @@ class EpsilonGreedy:
 
         return np.random.choice(ties)
 
-    def get_action(self):
+    def act(self):
         """
         Get an action from the epsilon-greedy policy, as the argmax of the q-values with probability 1 - epsilon, and
         a random action with probability epsilon.
@@ -76,7 +76,7 @@ class EpsilonGreedy:
         if np.random.random() < self.epsilon:
             return np.random.randint(0, self.num_actions)
         else:
-            return self.get_argmax(self.q_values)
+            return self._argmax(self.q_values)
 
     def train(self):
         """
@@ -91,7 +91,7 @@ class EpsilonGreedy:
             rewards = np.zeros(self.max_steps)
             optimal_action = [False] * self.max_steps
             for step in range(self.max_steps):
-                action = self.get_action()
+                action = self.act()
                 reward = k_armed_bandit.step(action)
                 self.action_counts[action] += 1
                 self.q_values[action] += (1 / self.action_counts[action]) * (reward - self.q_values[action])
