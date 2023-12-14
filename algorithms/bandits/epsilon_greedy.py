@@ -3,11 +3,13 @@
 #    - `.train` method streamlined, better metric logging etc.
 #    - Seeding, for reproducibility?
 from environment.k_armed_bandit import KArmedTestbed
+from utils.general import argmax
 
 import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
+
 matplotlib.use('TkAgg')
 
 
@@ -41,29 +43,6 @@ class EpsilonGreedy:
         # Initialise the action counts (N)
         self.action_counts = np.zeros(self.num_actions)
 
-    def _argmax(self, q_values):
-        """
-        Get the argmax of the q-values. Splits ties randomly.
-
-        Args:
-            q_values (np.ndarray): The q-values for each action.
-
-        Returns:
-            int: The action to take.
-        """
-        top = float("-inf")
-        ties = []
-
-        for i in range(len(q_values)):
-            if q_values[i] > top:
-                top = q_values[i]
-                ties = []
-
-            if q_values[i] == top:
-                ties.append(i)
-
-        return np.random.choice(ties)
-
     def act(self):
         """
         Get an action from the epsilon-greedy policy, as the argmax of the q-values with probability 1 - epsilon, and
@@ -76,7 +55,7 @@ class EpsilonGreedy:
         if np.random.random() < self.epsilon:
             return np.random.randint(0, self.num_actions)
         else:
-            return self._argmax(self.q_values)
+            return argmax(self.q_values)
 
     def train(self):
         """
