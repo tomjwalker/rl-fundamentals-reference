@@ -43,15 +43,15 @@ class MCControl:
 
     def _init_policy(self, state_shape):
         """
-        Use the policy initialisation from Sutton and Barto, pp. 93:
+        Use the target_policy initialisation from Sutton and Barto, pp. 93:
         - If player sum == 20 or 21, stick
         - Otherwise, hit
         """
         self.policy = np.ones(state_shape, dtype=np.int8)    # 0 = stick, 1 = hit
         self.policy[19:, :, :] = 0
-        # self.policy[19:21, :, :] = 1
-        # print(self.policy[:, :, 0])
-        # print(self.policy[:, :, 1])
+        # self.target_policy[19:21, :, :] = 1
+        # print(self.target_policy[:, :, 0])
+        # print(self.target_policy[:, :, 1])
 
     def reset(self):
         # Get env shape
@@ -59,7 +59,7 @@ class MCControl:
         for space in self.env.observation_space:
             state_shape += (space.n,)
 
-        # Initialise q-values, policy, and returns
+        # Initialise q-values, target_policy, and returns
         state_and_action_shape = state_shape + (self.env.action_space.n,)
         self.q_values = np.zeros(state_and_action_shape)
         self._init_policy(state_shape)
@@ -69,7 +69,7 @@ class MCControl:
             self.returns[index] = []
 
     def act(self, state):
-        """Greedy policy"""
+        """Greedy target_policy"""
         return argmax(self.q_values[state])
 
     def train(self, num_episodes=10000, gamma=1.0):
@@ -100,7 +100,7 @@ class MCControl:
             # if len(episode) > 5:
             #     print("interesting!")
 
-            # Once the episode is complete (the `while True` loop has broken), update the q-values and policy
+            # Once the episode is complete (the `while True` loop has broken), update the q-values and target_policy
             # Loop through the episode in reverse order, updating the q-values
             g = 0
             for t, (state, action, reward) in enumerate(reversed(episode)):
@@ -116,7 +116,7 @@ class MCControl:
                 # Update the q-value for this state-action pair
                 self.q_values[state][action] = np.mean(self.returns[state][action])
 
-                # Update the policy
+                # Update the target_policy
                 self.policy[state] = argmax(self.q_values[state][:])
 
 
