@@ -1,6 +1,6 @@
 """
 TODO:
-    - Figure out strange policy plots
+    - Figure out strange target_policy plots
 """
 
 
@@ -9,11 +9,8 @@ from utils.general import argmax
 
 import gymnasium as gym
 import numpy as np
-import pandas as pd
 
 import matplotlib
-import matplotlib.pyplot as plt
-import seaborn as sns
 matplotlib.use('TkAgg')
 
 
@@ -38,7 +35,7 @@ class MCOnPolicy:
         self.epsilon = epsilon
         self.gamma = gamma
 
-        self.name = "MC On-Policy"    # For plotting
+        self.name = "MC Off-Policy"    # For plotting
 
         self.q_values = None
         self.policy = None
@@ -51,7 +48,7 @@ class MCOnPolicy:
         for space in self.env.observation_space:
             state_shape += (space.n,)
 
-        # Initialise q-values, policy, and returns
+        # Initialise q-values, target_policy, and returns
         state_and_action_shape = state_shape + (self.env.action_space.n,)
         self.q_values = np.zeros(state_and_action_shape)
         self.policy = np.zeros(state_and_action_shape)
@@ -62,10 +59,10 @@ class MCOnPolicy:
 
     def act(self, state):
         """
-        Epsilon-greedy policy already coded in the policy, which stores the probabilities of each action for each state.
-        Just need to sample from the policy.
+        Epsilon-greedy target_policy already coded in the target_policy, which stores the probabilities of each action for each state.
+        Just need to sample from the target_policy.
         """
-        # If the policy is all 0s, then return a random action
+        # If the target_policy is all 0s, then return a random action
         if np.all(self.policy[state][:] == 0):
             return np.random.randint(0, self.env.action_space.n)
         else:
@@ -96,7 +93,7 @@ class MCOnPolicy:
 
     def _update_policy(self, state):
         """
-        Update the policy using the q-values.
+        Update the target_policy using the q-values.
         Where there are ties, break them randomly.
         π(a|s) is:
             - probability 1 - epsilon - epsilon / |A(s)| for the action with the highest q-value
@@ -104,12 +101,12 @@ class MCOnPolicy:
         """
 
         best_action = argmax(self.q_values[state][:])
-        # Update the policy
+        # Update the target_policy
         # TODO: this is A (for any s); make it A(s)
         self.policy[state][:] = self.epsilon / self.env.action_space.n
         self.policy[state][best_action] = 1 - self.epsilon + self.epsilon / self.env.action_space.n
 
-        # Assert that the policy sums to 1 for each state
+        # Assert that the target_policy sums to 1 for each state
         assert np.isclose(np.sum(self.policy[state][:]), 1.0), \
             f"Policy does not sum to 1 for state {state}. Sum is {np.sum(self.policy[state][:])}"
 
