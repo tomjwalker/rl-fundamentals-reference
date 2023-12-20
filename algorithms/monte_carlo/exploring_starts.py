@@ -1,16 +1,18 @@
+"""
+TODO:
+    - Figure out why plots not exactly the same as Sutton and Barto
+"""
+
+
+from algorithms.monte_carlo.viz import plot_results
 from utils.general import argmax
 
 import gymnasium as gym
 import numpy as np
-import pandas as pd
 
 import matplotlib
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 matplotlib.use('TkAgg')
-
-
-env = gym.make("Blackjack-v1", sab=True)    # `sab` means rules following Sutton and Barto
 
 
 def _is_subelement_present(subelement, my_list):
@@ -31,6 +33,8 @@ class MCControl:
 
     def __init__(self, env):
         self.env = env
+
+        self.name = "MC Exploring Starts"    # For plotting
 
         self.q_values = None
         self.policy = None
@@ -116,73 +120,18 @@ class MCControl:
                 self.policy[state] = argmax(self.q_values[state][:])
 
 
-def get_3d_plot(mc_control, usable_ace=True, fig=None, subplot=111):
-    # Get (state) values for a usable ace policy
-    if usable_ace:
-        values_usable_ace = np.max(mc_control.q_values[:, :, 1, :], axis=2)
-    else:
-        values_usable_ace = np.max(mc_control.q_values[:, :, 0, :], axis=2)
-
-    # If ax is not provided, create a new 3D axis
-    if fig is None:
-        fig = plt.figure()
-
-    # Clip the values_usable_ace axes to 12-21 and 1-10
-    values_usable_ace = values_usable_ace[12:22, 1:11]
-
-    ax = fig.add_subplot(subplot, projection='3d')
-
-    # Determine meshgrid from state space shape
-    x_start = 10
-    y_start = 12
-    x = np.arange(x_start, x_start + values_usable_ace.shape[1])
-    y = np.arange(y_start, y_start + values_usable_ace.shape[0])
-    x, y = np.meshgrid(x, y)
-
-    # Use the plot_surface method
-    surface = ax.plot_surface(x, y, values_usable_ace, cmap="viridis")
-
-    # Limit z-axis to -1 to 1
-    ax.set_zlim(-1, 1)
-
-    return fig, ax
-
-
-def plot_policy(mc_control):
-
-    usable_ace = mc_control.policy[11:22, :, 0]
-    usable_ace = pd.DataFrame(usable_ace)
-    usable_ace.index = np.arange(11, 22)
-    usable_ace.columns = np.arange(1, 11)
-    no_usable_ace = mc_control.policy[11:22, :, 1]
-    no_usable_ace = pd.DataFrame(no_usable_ace)
-    no_usable_ace.index = np.arange(11, 22)
-    no_usable_ace.columns = np.arange(1, 11)
-
-    fig, ax = plt.subplots(1, 2)
-
-
 def run():
 
-    TRAIN_EPISODES = 100000
+    # Run parameters
+    train_episodes = 10000
 
+    # Instantiate and train the agent
+    env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto
     mc_control = MCControl(env)
-    mc_control.train(num_episodes=TRAIN_EPISODES)
+    mc_control.train(num_episodes=train_episodes)
 
-    # Plot the state value functions - with and without usable ace
-    fig = plt.figure(figsize=plt.figaspect(0.5))
-    fig, ax_0 = get_3d_plot(mc_control, usable_ace=True, fig=fig, subplot=121)
-    ax_0.set_title("Usable ace")
-    ax_0.set_xlabel("Dealer showing")
-    ax_0.set_ylabel("Player sum")
-    ax_0.set_zlabel("Value")
-    fig, ax_1 = get_3d_plot(mc_control, usable_ace=False, fig=fig, subplot=122)
-    ax_1.set_title("No usable ace")
-    ax_1.set_xlabel("Dealer showing")
-    ax_1.set_ylabel("Player sum")
-    ax_1.set_zlabel("Value")
-
-    plt.show()
+    # Plot the results
+    plot_results(mc_control)
 
 
 if __name__ == "__main__":
