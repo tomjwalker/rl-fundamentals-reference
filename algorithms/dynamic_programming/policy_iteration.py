@@ -15,8 +15,8 @@ class PolicyIteration:
         self.value = np.zeros((self.max_cars + 1, self.max_cars + 1), dtype=np.float32)
 
     def save_artefacts(self, save_name):
-        policy_dir = ".data/policy_iteration/policy"
-        value_dir = ".data/policy_iteration/value"
+        policy_dir = ".data/dynamic_programming/policy_iteration/policy"
+        value_dir = ".data/dynamic_programming/policy_iteration/value"
         policy_filepath = policy_dir + "/" + save_name + ".npy"
         value_filepath = value_dir + "/" + save_name + ".npy"
         np.save(set_filepath(policy_filepath), self.policy)
