@@ -72,20 +72,6 @@ def plot_policies():
             ax[axes_row, axes_col].set_ylabel("Location 1")
             ax[axes_row, axes_col].invert_yaxis()
 
-
-
-            # # Heatmap of policy. Ensure that if the policy is all 0s, the heatmap is still centered at 0
-            # policy = policies[i*3+j]
-            # if np.all(policy == 0):
-            #     # Plot all white heatmap
-            #     sns.heatmap(policy, cmap="seismic", center=0, annot=False, fmt=".1f", cbar=False, ax=ax[i, j])
-            # else:
-            #     sns.heatmap(policy, cmap="seismic", center=0, annot=False, fmt=".1f", cbar=False, ax=ax[i, j])
-            # ax[i, j].set_title(f"π {i*3+j}")
-            # ax[i, j].set_xlabel("Location 2")
-            # ax[i, j].set_ylabel("Location 1")
-            # ax[i, j].invert_yaxis()
-
     # On the right of the first row of subplots, add a colorbar for the policy heatmaps
     # Discretise the colorbar into 11 bins
     cbar_ax = fig.add_axes([0.92, 0.55, 0.02, 0.35])    # [left, bottom, width, height]
