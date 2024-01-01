@@ -1,81 +1,179 @@
 """
-Adapts the Gymnasium FrozenLake environment to follow the simple maze setup in pp165 of Sutton and Barto (2018).
+Simple implementation of the maze gridworld on pp165 of Sutton and Barto (2018).
+
+Follows the Gymnasium API, so that it can be used with the same algorithms and tools: an environment class with the
+following:
+    - Attributes:
+        - action_space: a gym.spaces.Discrete object, representing the action space
+        - observation_space: a gym.spaces.Discrete object, representing the observation space
+    - Methods:
+        - reset(): resets the environment to its initial state, and returns the initial observation
+        - step(action): takes an action, and returns a tuple (observation, reward, done, info)
+        - render(): renders the environment
 """
+import numpy as np
+from gymnasium.spaces import Discrete
 
-from __future__ import annotations
-
-from minigrid.core.constants import COLOR_NAMES
-from minigrid.core.grid import Grid
-from minigrid.core.mission import MissionSpace
-from minigrid.core.world_object import Door, Goal, Key, Wall
-from minigrid.manual_control import ManualControl
-from minigrid.minigrid_env import MiniGridEnv
+import matplotlib
+from matplotlib import pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib.pyplot import grid
+matplotlib.use('TkAgg')
 
 
-class SimpleEnv(MiniGridEnv):
-    def __init__(
-            self,
-            size=10,
-            agent_start_pos=(1, 1),
-            agent_start_dir=0,
-            max_steps: int | None = None,
-            **kwargs,
-    ):
-        self.agent_start_pos = agent_start_pos
-        self.agent_start_dir = agent_start_dir
+class Maze:
 
-        mission_space = MissionSpace(mission_func=self._gen_mission)
+    def __init__(self):
 
-        if max_steps is None:
-            max_steps = 4 * size ** 2
-
-        super().__init__(
-            mission_space=mission_space,
-            grid_size=size,
-            # Set this to True for maximum speed
-            see_through_walls=True,
-            max_steps=max_steps,
-            **kwargs,
+        # "#" = standard, "S" = start, "G" = goal, "W" = wall
+        layout = np.array(
+            [
+                ["#", "#", "#", "#", "#", "#", "#", "W", "G"],
+                ["#", "#", "W", "#", "#", "#", "#", "W", "#"],
+                ["S", "#", "W", "#", "#", "#", "#", "W", "#"],
+                ["#", "#", "W", "#", "#", "#", "#", "#", "#"],
+                ["#", "#", "#", "#", "#", "W", "#", "#", "#"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+            ],
+            dtype=object
         )
 
-    @staticmethod
-    def _gen_mission():
-        return "grand mission"
+        self.layout = layout
 
-    def _gen_grid(self, width, height):
-        # Create an empty grid
-        self.grid = Grid(width, height)
+        self.action_space = Discrete(4)
+        self.observation_space = Discrete(layout.size)
 
-        # Generate the surrounding walls
-        self.grid.wall_rect(0, 0, width, height)
+        self.state = None
+        self.reset()
 
-        # Generate verical separation wall
-        for i in range(0, height):
-            self.grid.set(5, i, Wall())
+    def reset(self):
+        """Resets the environment to its initial state, and returns the initial observation."""
 
-        # Place the door and key
-        self.grid.set(5, 6, Door(COLOR_NAMES[0], is_locked=True))
-        self.grid.set(3, 6, Key(COLOR_NAMES[0]))
+        # Set the agent's initial position
+        self.state = np.array([0, 2])
 
-        # Place a goal square in the bottom-right corner
-        self.put_obj(Goal(), width - 2, height - 2)
+        # Return the initial observation
+        return self.state
 
-        # Place the agent
-        if self.agent_start_pos is not None:
-            self.agent_pos = self.agent_start_pos
-            self.agent_dir = self.agent_start_dir
+    def step(self, action):
+        """
+        Takes an action, and returns a tuple (observation, reward, done, info).
+
+        If the action is invalid, the agent remains in the same state: given the action, if the next state would be a
+        wall, the agent remains in the same state. Similarly if the action would take the agent off the grid.
+        """
+
+        # Get the agent's current position
+        agent_x, agent_y = self.state
+
+        # Get the agent's next position
+        if action == 0:  # Up
+            next_state = (agent_x, agent_y - 1)
+        elif action == 1:  # Right
+            next_state = (agent_x + 1, agent_y)
+        elif action == 2:  # Down
+            next_state = (agent_x, agent_y + 1)
+        elif action == 3:  # Left
+            next_state = (agent_x - 1, agent_y)
         else:
-            self.place_agent()
+            raise ValueError(f"Invalid action {action}")
 
-        self.mission = "grand mission"
+        # Check if the next state is a wall
+        if self.layout[next_state] == "W":
+            next_state = self.state
+
+        # Check if the next state is off the grid
+        if next_state[0] < 0 or next_state[0] >= self.layout.shape[1] or next_state[1] < 0 or next_state[1] >= \
+                self.layout.shape[0]:
+            next_state = self.state
+
+        # Update the agent's position
+        self.state = next_state
+
+        # Get the reward
+        reward = 0
+        if self.layout[next_state] == "G":
+            reward = 1
+
+        # Check if the episode is done
+        terminated = self.layout[next_state] == "G"
+        truncated = False
+
+        # Return the next observation, reward, done flag, and info dict
+        return self.state, reward, terminated, truncated, {}
+
+    def render(self):
+        """Visualizes the environment using Matplotlib."""
+
+        # Create the plot
+        fig, ax = plt.subplots()
+
+        # Create a colormap for different cell types
+        cmap = {
+            "#": "black",
+            "S": "orange",
+            "G": "green",
+            "W": "gray",
+        }
+
+        # Create a patch for each cell
+        patches = []
+        for i, row in enumerate(self.layout):
+            for j, cell in enumerate(row):
+                color = cmap[cell]
+                patch = mpatches.Rectangle(xy=(j, i), width=1, height=1, color=color)
+                patches.append(patch)
+
+        # Place the agent's marker on top
+        agent_x, agent_y = self.state
+        agent_marker = mpatches.RegularPolygon(
+            xy=(agent_x + 0.5, agent_y + 0.5), numVertices=5, color="red", radius=0.2
+        )
+        patches.append(agent_marker)
+
+        # Set plot limits and labels
+
+        ax.set_xticks(range(self.layout.shape[1] + 1))  # Tick at every column
+        ax.set_yticks(range(self.layout.shape[1] + 1))  # Tick at every row
+        ax.set_xlim(-0.5, self.layout.shape[1] + 0.5)
+        ax.set_ylim(-0.5, self.layout.shape[0] + 0.5)
+
+        grid(color="white", linestyle="-", linewidth=2)  # Add gridlines
+
+        # Add all patches to the plot
+        for patch in patches:
+            ax.add_patch(patch)
+
+        ax.set_xlabel("Columns")
+        ax.set_ylabel("Rows")
+        ax.set_title("Maze Environment")
+        ax.invert_yaxis()
+
+        # Display the plot
+        plt.show()
 
 
 def main():
-    env = SimpleEnv(render_mode="human")
 
-    # enable manual control for testing
-    manual_control = ManualControl(env, seed=42)
-    manual_control.start()
+    # Create the environment
+    env = Maze()
+
+    # Reset the environment
+    env.reset()
+
+    # Render the environment
+    env.render()
+
+    # Take some random actions
+    num_actions = 10
+    for _ in range(num_actions):
+
+        # Take a random action
+        action = env.action_space.sample()
+        next_state, reward, terminated, truncated, _ = env.step(action)
+
+        # Render the environment
+        env.render()
 
 
 if __name__ == "__main__":
