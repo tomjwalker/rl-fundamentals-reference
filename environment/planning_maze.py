@@ -7,12 +7,12 @@ following:
         - action_space: a gym.spaces.Discrete object, representing the action space
         - observation_space: a gym.spaces.Discrete object, representing the observation space
     - Methods:
-        - reset(): resets the environment to its initial state, and returns the initial observation
+        - reset(): resets the environment to its initial _state, and returns the initial observation
         - step(action): takes an action, and returns a tuple (observation, reward, done, info)
         - render(): renders the environment
 """
 import numpy as np
-from gymnasium.spaces import Discrete
+from gymnasium.spaces import Discrete, Box
 
 import matplotlib
 from matplotlib import pyplot as plt
@@ -26,6 +26,7 @@ class Maze:
     def __init__(self):
 
         # "#" = standard, "S" = start, "G" = goal, "W" = wall
+
         layout = np.array(
             [
                 ["#", "#", "#", "#", "#", "#", "#", "W", "G"],
@@ -41,63 +42,123 @@ class Maze:
         self.layout = layout
 
         self.action_space = Discrete(4)
-        self.observation_space = Discrete(layout.size)
+        # self.observation_space = Box(low=0, high=self.layout.shape[1] - 1, shape=(2, ), dtype=int)
+        self.observation_space = Discrete(self.layout.size)
 
+        self._state = None
         self.state = None
         self.reset()
 
     def reset(self):
-        """Resets the environment to its initial state, and returns the initial observation."""
+        """
+        Resets the environment to its initial _state, and returns the initial observation.
 
-        # Set the agent's initial position
-        self.state = np.array([0, 2])
+         _state:
+        [0, 0] || [0, 1] || [0, 2] || [0, 3] || [0, 4] || [0, 5] || [0, 6] || [0, 7] || [0, 8]
+        [1, 0] || [1, 1] || [1, 2] || [1, 3] || [1, 4] || [1, 5] || [1, 6] || [1, 7] || [1, 8]
+        [2, 0] || [2, 1] || [2, 2] || [2, 3] || [2, 4] || [2, 5] || [2, 6] || [2, 7] || [2, 8]
+        [3, 0] || [3, 1] || [3, 2] || [3, 3] || [3, 4] || [3, 5] || [3, 6] || [3, 7] || [3, 8]
+        [4, 0] || [4, 1] || [4, 2] || [4, 3] || [4, 4] || [4, 5] || [4, 6] || [4, 7] || [4, 8]
+        [5, 0] || [5, 1] || [5, 2] || [5, 3] || [5, 4] || [5, 5] || [5, 6] || [5, 7] || [5, 8]
+
+        state:
+        0  || 1  || 2  || 3  || 4  || 5  || 6  || 7  || 8
+        9  || 10 || 11 || 12 || 13 || 14 || 15 || 16 || 17
+        18 || 19 || 20 || 21 || 22 || 23 || 24 || 25 || 26
+        27 || 28 || 29 || 30 || 31 || 32 || 33 || 34 || 35
+        36 || 37 || 38 || 39 || 40 || 41 || 42 || 43 || 44
+        45 || 46 || 47 || 48 || 49 || 50 || 51 || 52 || 53
+        """
+
+        # Set the agent's initial position. 1st element is NumPy row (y-coordinate), 2nd element is NumPy column
+        # (x-coordinate)
+        self._state = np.array([2, 0])
+
+        self.state = self.flatten(self._state)
 
         # Return the initial observation
-        return self.state
+        return self.state, {}
+
+    def flatten(self, state):
+        """
+        Flattens 2D _state (which indicates row and column) into a 1D state.
+        """
+        return state[0] * self.layout.shape[1] + state[1]
+
+    def unflatten(self, state):
+        """Unflattens 1D state into a 2D _state (which indicates row and column)."""
+        return np.array([state // self.layout.shape[1], state % self.layout.shape[1]])
 
     def step(self, action):
         """
-        Takes an action, and returns a tuple (observation, reward, done, info).
+        Takes an action, and returns a tuple (observation, reward, terminated, truncated=False, info).
 
-        If the action is invalid, the agent remains in the same state: given the action, if the next state would be a
-        wall, the agent remains in the same state. Similarly if the action would take the agent off the grid.
+        If the action is invalid, the agent remains in the same _state: given the action, if the next _state would be a
+        wall, the agent remains in the same _state. Similarly, if the action would take the agent off the grid.
         """
 
         # Get the agent's current position
-        agent_x, agent_y = self.state
+        agent_y, agent_x = self._state    # 1st element is NumPy row (y-coordinate), 2nd element is NumPy column
 
-        # Get the agent's next position
-        if action == 0:  # Up
-            next_state = (agent_x, agent_y - 1)
-        elif action == 1:  # Right
-            next_state = (agent_x + 1, agent_y)
-        elif action == 2:  # Down
-            next_state = (agent_x, agent_y + 1)
-        elif action == 3:  # Left
-            next_state = (agent_x - 1, agent_y)
+        # Get the next _state
+        if action == 0:     # Move up
+            _next_state = np.array([agent_y - 1, agent_x])
+        elif action == 1:   # Move right
+            _next_state = np.array([agent_y, agent_x + 1])
+        elif action == 2:   # Move down
+            _next_state = np.array([agent_y + 1, agent_x])
+        elif action == 3:   # Move left
+            _next_state = np.array([agent_y, agent_x - 1])
         else:
             raise ValueError(f"Invalid action {action}")
 
-        # Check if the next state is a wall
-        if self.layout[next_state] == "W":
-            next_state = self.state
+        # Check if the next _state is off the grid
+        if _next_state[0] < 0 or _next_state[0] >= self.layout.shape[0] or _next_state[1] < 0 or _next_state[1] >= \
+                self.layout.shape[1]:
+            _next_state = self._state
 
-        # Check if the next state is off the grid
-        if next_state[0] < 0 or next_state[0] >= self.layout.shape[1] or next_state[1] < 0 or next_state[1] >= \
-                self.layout.shape[0]:
-            next_state = self.state
-
-        # Update the agent's position
-        self.state = next_state
+        # Check if the next _state is a wall
+        if self.layout[_next_state[0]][_next_state[1]] == "W":
+            _next_state = self._state
 
         # Get the reward
         reward = 0
-        if self.layout[next_state] == "G":
+        if self.layout[_next_state[0]][_next_state[1]] == "G":
             reward = 1
 
         # Check if the episode is done
-        terminated = self.layout[next_state] == "G"
+        terminated = self.layout[_next_state[0]][_next_state[1]] == "G"
         truncated = False
+
+        # TODO: Remove this block (/replace with proper tests. Temp check)
+        next_state = self.flatten(_next_state)
+        if self.state == 18:    # Start state
+            if action == 2:     # Move down
+                assert next_state == 27
+            elif action == 1:   # Move right
+                assert next_state == 19
+            elif action == 0:   # Move up
+                assert next_state == 9
+            elif action == 3:   # Move left, off the grid
+                assert next_state == 18
+            else:
+                raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
+        # Check behaviour of another state
+        if self.state == 17:    # Start state
+            if action == 2:     # Move down
+                assert next_state == 26
+            elif action == 1:   # Move right, off the grid
+                assert next_state == 17
+            elif action == 0:   # Move up
+                assert next_state == 8
+            elif action == 3:   # Move left, into wall
+                assert next_state == 17
+            else:
+                raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
+
+        # Update the agent's position
+        self._state = _next_state
+        self.state = self.flatten(self._state)
 
         # Return the next observation, reward, done flag, and info dict
         return self.state, reward, terminated, truncated, {}
@@ -125,7 +186,7 @@ class Maze:
                 patches.append(patch)
 
         # Place the agent's marker on top
-        agent_x, agent_y = self.state
+        agent_y, agent_x = self._state
         agent_marker = mpatches.RegularPolygon(
             xy=(agent_x + 0.5, agent_y + 0.5), numVertices=5, color="red", radius=0.2
         )
@@ -164,12 +225,22 @@ def main():
     # Render the environment
     env.render()
 
-    # Take some random actions
-    num_actions = 10
-    for _ in range(num_actions):
+    # # Take some random actions
+    # num_actions = 10
+    # for _ in range(num_actions):
+    #
+    #     # Take a random action
+    #     action = env.action_space.sample()
+    #     next_state, reward, terminated, truncated, _ = env.step(action)
+    #
+    #     # Render the environment
+    #     env.render()
+    #
 
-        # Take a random action
-        action = env.action_space.sample()
+    # Deterministic path from S to F (including a couple of tries to run into the wall)
+    actions = [2, 1, 1, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0]
+    for action in actions:
+
         next_state, reward, terminated, truncated, _ = env.step(action)
 
         # Render the environment

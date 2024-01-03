@@ -16,6 +16,19 @@ from matplotlib import pyplot as plt
 matplotlib.use('TkAgg')
 
 
+# def make_env():
+#     custom_map = [
+#         "FFFFFFFHG",
+#         "FFHFFFFHF",
+#         "SFHFFFFHF",
+#         "FFHFFFFFF",
+#         "FFHFFFFFF",
+#         "FFFFFFFFF",
+#         ]
+#     env = gym.make("FrozenLake-v1", desc=custom_map, is_slippery=False)
+#     return env
+
+
 class Dyna:
 
     def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, n_planning_steps=5):
@@ -124,6 +137,21 @@ class Dyna:
                 print(f"Episode {episode}")
                 print(f"Sum of episode rewards: {episode_reward}")
                 print()
+
+
+def plot_episode_steps(episode_steps, title):
+    """
+    Plot the episode rewards.
+    """
+    # Plot the episode rewards
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(episode_steps)
+    ax.set_xlabel("Episode")
+    ax.set_ylabel("Episode steps")
+    # Set y-limits
+    # ax.set_ylim([0, 200])
+    ax.set_title(title)
+    plt.show()
 
 
 def run():
