@@ -55,7 +55,6 @@ class Dyna:
         for episode in range(num_episodes):
 
             # Initialise S (**a**)
-            #TODO: THIS NEEDS TO BE FIXED!!!
             state, _ = self.env.reset()
 
             # Initialise logging variables
@@ -87,10 +86,6 @@ class Dyna:
                     self.model[(state, action)].append((reward, next_state))
                 elif (reward, next_state) not in self.model[(state, action)]:
                     self.model[(state, action)].append((reward, next_state))
-
-                # TODO: temp: remove
-                if episode == 2:
-                    print("debug")
 
                 # Loop for n planning steps, and perform planning updates (**f**)
                 for _ in range(self.n_planning_steps):
