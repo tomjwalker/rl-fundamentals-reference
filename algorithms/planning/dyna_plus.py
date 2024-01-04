@@ -8,6 +8,7 @@ from dyna import Dyna    # DynaPlus inherits from Dyna, so we can reuse a lot of
 # and Barto (2018))
 # from environment.planning_maze import Maze
 from environment.planning.blocking_maze import BlockingMaze
+from environment.planning.shortcut_maze import ShortcutMaze
 #
 # import gymnasium as gym
 import numpy as np
@@ -66,7 +67,7 @@ class DynaPlus(Dyna):
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
 
                 # TODO: temp debug check
-                if self.env.total_steps == 999:
+                if self.env.total_steps == 2999:
                     print("debug")
 
                 # Update Q(S, A) (**d**)
@@ -130,7 +131,25 @@ class DynaPlus(Dyna):
 def run():
 
     # Run parameters
-    train_episodes = 3000
+    env_specs = {
+        "BlockingMaze": {
+            "env": BlockingMaze,
+            "train_episodes": 3000,
+            "ylim": 150,
+            "xlim": 3000,
+        },
+        "ShortcutMaze": {
+            "env": ShortcutMaze,
+            "train_episodes": 6000,
+            "ylim": 400,
+            "xlim": 6000,
+        },
+    }
+
+    ENVIRONMENT = "ShortcutMaze"
+
+    # train_episodes = 3000
+    train_episodes = env_specs[ENVIRONMENT]["train_episodes"]
     gamma = 0.95
     epsilon = 0.1
     alpha = 0.5
@@ -145,7 +164,7 @@ def run():
     for i, row in run_specs.iterrows():
 
         # Create the environment
-        env = BlockingMaze()
+        env = env_specs[ENVIRONMENT]["env"]()
 
         # Create and train the agent
         rl_loop = row["model"](env, gamma=gamma, alpha=alpha, epsilon=epsilon, n_planning_steps=planning_steps)
@@ -157,8 +176,8 @@ def run():
         # Plot the results
         plt.plot(episode_cumulative_rewards, color=row["colour"], label=row["label"])
 
-    plt.ylim(bottom=0, top=150)    # Set y-limits after all plots are generated
-    plt.xlim(left=0, right=3000)    # Set x-limits after all plots are generated
+    plt.ylim(bottom=0, top=env_specs[ENVIRONMENT]["ylim"])    # Set y-limits after all plots are generated
+    plt.xlim(left=0, right=env_specs[ENVIRONMENT]["xlim"])    # Set x-limits after all plots are generated
     plt.xlabel("Episode")
     plt.ylabel("Episode steps")
     plt.title(f"Episode steps for Dyna agent (gamma={gamma})")
