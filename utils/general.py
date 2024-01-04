@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+np.random.seed(42)
 
 
 def set_filepath(filepath):

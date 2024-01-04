@@ -10,6 +10,7 @@ from environment.planning_maze import Maze
 import numpy as np
 from collections import defaultdict    # For model, with default value of empty list
 import random    # For random choice of state and action from model during planning
+random.seed(42)
 
 import matplotlib
 from matplotlib import pyplot as plt
@@ -25,6 +26,9 @@ class Dyna:
         self.gamma = gamma
         self.epsilon = epsilon
         self.n_planning_steps = n_planning_steps
+
+        # Used for plotting cum reward vs training step plots (see Sutton and Barto, 2018, pp 167)
+        self.cumulative_reward = []
 
         self.q_values = None
         self.model = None
@@ -42,6 +46,12 @@ class Dyna:
         # Model is a dictionary of lists, where each list contains tuples of (reward, next_state), and the key is the
         # #(state, action) pair
         self.model = defaultdict(list)
+
+    def update_cumulative_reward(self, reward):
+        if len(self.cumulative_reward) == 0:
+            self.cumulative_reward.append(reward)
+        else:
+            self.cumulative_reward.append(reward + self.cumulative_reward[-1])
 
     def act(self, state):
         """Given a state, return an action according to the epsilon-greedy policy."""
@@ -72,12 +82,14 @@ class Dyna:
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
 
                 # Update Q(S, A) (**d**)
-                td_target = reward + self.gamma * np.max(self.q_values[next_state, :])
+                best_next_action = argmax(self.q_values[next_state, :])
+                td_target = reward + self.gamma * self.q_values[next_state, best_next_action]
                 self.q_values[state][action] += self.alpha * (td_target - self.q_values[state][action])
 
                 # Update logs
                 episode_reward += reward
                 episode_steps += 1
+                self.update_cumulative_reward(reward)
 
                 # Update model (**e**).
                 # Model is a dictionary: {(state, action): [(reward, next_state)_1, (reward, next_state)_2]}
@@ -89,8 +101,6 @@ class Dyna:
 
                 # Loop for n planning steps, and perform planning updates (**f**)
                 for _ in range(self.n_planning_steps):
-
-                    print(f"Episode {episode}, planning step {_}")
 
                     # Choose a random, previously observed state and action (**f.i, f.ii**)
                     (state, action) = random.choice(list(self.model.keys()))
@@ -115,9 +125,9 @@ class Dyna:
             self.episode_rewards.append(episode_reward)
             self.episode_steps.append(episode_steps)
 
-            if episode % 100 == 0:
+            if episode % (num_episodes // 10) == 0:
                 print(f"Episode {episode}")
-                print(f"Sum of episode rewards: {episode_reward}")
+                print(f"Cumulative reward: {self.cumulative_reward[-1]}")
                 print()
 
 
@@ -126,6 +136,8 @@ def run():
     # Run parameters
     train_episodes = 50
     gamma = 0.95
+    alpha = 0.1
+    epsilon = 0.1
     run_specs = {
         "planning steps": [0, 5, 50],
         "colour": ["blue", "green", "red"],
@@ -139,7 +151,7 @@ def run():
         env = Maze()
 
         # Create and train the agent
-        rl_loop = Dyna(env, gamma=gamma, n_planning_steps=row["planning steps"])
+        rl_loop = Dyna(env, gamma=gamma, alpha=alpha, epsilon=epsilon, n_planning_steps=row["planning steps"])
         rl_loop.train(num_episodes=train_episodes)
 
         # Plot the results
