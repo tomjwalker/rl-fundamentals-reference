@@ -1,5 +1,6 @@
 """
-Simple implementation of the maze gridworld on pp165 of Sutton and Barto (2018).
+Simple implementation of the blocking maze gridworld on pp167 of Sutton and Barto (2018) for exploring Dyna-Q+ (
+changing environments).
 
 Follows the Gymnasium API, so that it can be used with the same algorithms and tools: an environment class with the
 following:
@@ -12,7 +13,7 @@ following:
         - render(): renders the environment
 """
 import numpy as np
-from gymnasium.spaces import Discrete
+from gymnasium.spaces import Discrete, Box
 
 import matplotlib
 from matplotlib import pyplot as plt
@@ -21,32 +22,35 @@ from matplotlib.pyplot import grid
 matplotlib.use('TkAgg')
 
 
-class Maze:
+class BlockingMaze:
 
     def __init__(self):
 
         # "#" = standard, "S" = start, "G" = goal, "W" = wall
 
-        layout = np.array(
+        initial_layout = np.array(
             [
-                ["#", "#", "#", "#", "#", "#", "#", "W", "G"],
-                ["#", "#", "W", "#", "#", "#", "#", "W", "#"],
-                ["S", "#", "W", "#", "#", "#", "#", "W", "#"],
-                ["#", "#", "W", "#", "#", "#", "#", "#", "#"],
-                ["#", "#", "#", "#", "#", "W", "#", "#", "#"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "G"],
                 ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                ["W", "W", "W", "W", "W", "W", "W", "W", "#"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                ["#", "#", "#", "S", "#", "#", "#", "#", "#"],
             ],
             dtype=object
         )
 
-        self.layout = layout
+        self.layout = initial_layout
 
         self.action_space = Discrete(4)
         # self.observation_space = Box(low=0, high=self.layout.shape[1] - 1, shape=(2, ), dtype=int)
         self.observation_space = Discrete(self.layout.size)
 
+        self.total_steps = 0
+
         self._state = None
         self.state = None
+        self.episode_steps = None
         self.reset()
 
     def reset(self):
@@ -70,6 +74,9 @@ class Maze:
         45 || 46 || 47 || 48 || 49 || 50 || 51 || 52 || 53
         """
 
+        # Reset episode steps
+        self.episode_steps = 0
+
         # Set the agent's initial position. 1st element is NumPy row (y-coordinate), 2nd element is NumPy column
         # (x-coordinate)
         row, col = np.where(self.layout == "S")
@@ -91,6 +98,22 @@ class Maze:
         """Unflattens 1D state into a 2D _state (which indicates row and column)."""
         return np.array([state // self.layout.shape[1], state % self.layout.shape[1]])
 
+    def _change_layout(self):
+        """
+        Changes the layout of the environment.
+        """
+        self.layout = np.array(
+            [
+                ["#", "#", "#", "#", "#", "#", "#", "#", "G"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                ["#", "W", "W", "W", "W", "W", "W", "W", "W"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                ["#", "#", "#", "S", "#", "#", "#", "#", "#"],
+            ],
+            dtype=object
+        )
+
     def step(self, action):
         """
         Takes an action, and returns a tuple (observation, reward, terminated, truncated=False, info).
@@ -102,8 +125,12 @@ class Maze:
         # Get the agent's current position
         agent_y, agent_x = self._state    # 1st element is NumPy row (y-coordinate), 2nd element is NumPy column
 
+        # Layout changes after 1000 steps
+        if self.total_steps == 1000:
+            self._change_layout()
+
         # Get the next _state
-        if action == 0:     # Move up
+        if action == 0:    # Move up
             _next_state = np.array([agent_y - 1, agent_x])
         elif action == 1:   # Move right
             _next_state = np.array([agent_y, agent_x + 1])
@@ -131,36 +158,41 @@ class Maze:
         # Check if the episode is done
         terminated = self.layout[_next_state[0]][_next_state[1]] == "G"
         truncated = False
-
-        # TODO: Remove this block (/replace with proper tests. Temp check)
+        #
+        # # TODO: Remove this block (/replace with proper tests. Temp check)
         next_state = self.flatten(_next_state)
-        if self.state == 18:    # Start state
-            if action == 2:     # Move down
-                assert next_state == 27
-            elif action == 1:   # Move right
-                assert next_state == 19
-            elif action == 0:   # Move up
-                assert next_state == 9
-            elif action == 3:   # Move left, off the grid
-                assert next_state == 18
-            else:
-                raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
-        # Check behaviour of another state
-        if self.state == 17:    # Start state
-            if action == 2:     # Move down
-                assert next_state == 26
-            elif action == 1:   # Move right, off the grid
-                assert next_state == 17
-            elif action == 0:   # Move up
-                assert next_state == 8
-            elif action == 3:   # Move left, into wall
-                assert next_state == 17
-            else:
-                raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
+        if self.total_steps < 1000:
+            if self.state == 44:    # Start state
+                if action == 0:     # Move up
+                    assert next_state == 35    # Should be allowed to move up initially
+                elif action == 1:   # Move right
+                    assert next_state == 44
+                elif action == 2:   # Move down
+                    assert next_state == 53
+                elif action == 3:   # Move left, off the grid
+                    assert next_state == 43
+                else:
+                    raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
+        if self.total_steps > 1000:
+            if self.state == 44:    # Start state
+                if action == 0:     # Move up
+                    assert next_state == 44    # **Should now be blocked by a wall**
+                elif action == 1:   # Move right
+                    assert next_state == 44
+                elif action == 2:   # Move down
+                    assert next_state == 53
+                elif action == 3:   # Move left, off the grid
+                    assert next_state == 43
+                else:
+                    raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
+
 
         # Update the agent's position
         self._state = _next_state
         self.state = self.flatten(self._state)
+
+        # Update total steps
+        self.total_steps += 1
 
         # Return the next observation, reward, done flag, and info dict
         return self.state, reward, terminated, truncated, {}
@@ -209,7 +241,7 @@ class Maze:
 
         ax.set_xlabel("Columns")
         ax.set_ylabel("Rows")
-        ax.set_title("Maze Environment")
+        ax.set_title("BlockingMaze Environment")
         ax.invert_yaxis()
 
         # Display the plot
@@ -219,7 +251,7 @@ class Maze:
 def main():
 
     # Create the environment
-    env = Maze()
+    env = BlockingMaze()
 
     # Reset the environment
     env.reset()
