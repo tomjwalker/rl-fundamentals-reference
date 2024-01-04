@@ -102,17 +102,20 @@ class BlockingMaze:
         """
         Changes the layout of the environment.
         """
-        self.layout = np.array(
-            [
-                ["#", "#", "#", "#", "#", "#", "#", "#", "G"],
-                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
-                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
-                ["#", "W", "W", "W", "W", "W", "W", "W", "W"],
-                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
-                ["#", "#", "#", "S", "#", "#", "#", "#", "#"],
-            ],
-            dtype=object
-        )
+
+        if self.total_steps == 1000:
+
+            self.layout = np.array(
+                [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "G"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "W", "W", "W", "W", "W", "W", "W", "W"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "#", "#", "S", "#", "#", "#", "#", "#"],
+                ],
+                dtype=object
+            )
 
     def step(self, action):
         """
@@ -126,8 +129,7 @@ class BlockingMaze:
         agent_y, agent_x = self._state    # 1st element is NumPy row (y-coordinate), 2nd element is NumPy column
 
         # Layout changes after 1000 steps
-        if self.total_steps == 1000:
-            self._change_layout()
+        self._change_layout()
 
         # Get the next _state
         if action == 0:    # Move up
@@ -158,33 +160,33 @@ class BlockingMaze:
         # Check if the episode is done
         terminated = self.layout[_next_state[0]][_next_state[1]] == "G"
         truncated = False
-        #
-        # # TODO: Remove this block (/replace with proper tests. Temp check)
-        next_state = self.flatten(_next_state)
-        if self.total_steps < 1000:
-            if self.state == 44:    # Start state
-                if action == 0:     # Move up
-                    assert next_state == 35    # Should be allowed to move up initially
-                elif action == 1:   # Move right
-                    assert next_state == 44
-                elif action == 2:   # Move down
-                    assert next_state == 53
-                elif action == 3:   # Move left, off the grid
-                    assert next_state == 43
-                else:
-                    raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
-        if self.total_steps > 1000:
-            if self.state == 44:    # Start state
-                if action == 0:     # Move up
-                    assert next_state == 44    # **Should now be blocked by a wall**
-                elif action == 1:   # Move right
-                    assert next_state == 44
-                elif action == 2:   # Move down
-                    assert next_state == 53
-                elif action == 3:   # Move left, off the grid
-                    assert next_state == 43
-                else:
-                    raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
+        # #
+        # # # TODO: Remove this block (/replace with proper tests. Temp check)
+        # next_state = self.flatten(_next_state)
+        # if self.total_steps < 1000:
+        #     if self.state == 44:    # Start state
+        #         if action == 0:     # Move up
+        #             assert next_state == 35    # Should be allowed to move up initially
+        #         elif action == 1:   # Move right
+        #             assert next_state == 44
+        #         elif action == 2:   # Move down
+        #             assert next_state == 53
+        #         elif action == 3:   # Move left, off the grid
+        #             assert next_state == 43
+        #         else:
+        #             raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
+        # if self.total_steps > 1000:
+        #     if self.state == 44:    # Start state
+        #         if action == 0:     # Move up
+        #             assert next_state == 44    # **Should now be blocked by a wall**
+        #         elif action == 1:   # Move right
+        #             assert next_state == 44
+        #         elif action == 2:   # Move down
+        #             assert next_state == 53
+        #         elif action == 3:   # Move left, off the grid
+        #             assert next_state == 43
+        #         else:
+        #             raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
 
 
         # Update the agent's position
