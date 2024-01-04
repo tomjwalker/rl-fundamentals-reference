@@ -7,11 +7,10 @@ from dyna import Dyna    # DynaPlus inherits from Dyna, so we can reuse a lot of
 # Import relevant gridworld environment (local implementation of blocking and shortcut maze gridworlds, pp167 of Sutton
 # and Barto (2018))
 # from environment.planning_maze import Maze
-from environment.blocking_maze import BlockingMaze
+from environment.planning.blocking_maze import BlockingMaze
 #
 # import gymnasium as gym
 import numpy as np
-from collections import defaultdict    # For model, with default value of empty list
 import random    # For random choice of state and action from model during planning
 random.seed(42)
 

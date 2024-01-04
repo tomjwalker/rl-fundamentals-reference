@@ -4,7 +4,7 @@ import pandas as pd
 from utils.general import argmax
 
 # Import relevant gridworld environment (local implementation of gridworld pp165 of Sutton and Barto (2018))
-from environment.planning_maze import Maze
+from environment.planning.planning_maze import Maze
 #
 # import gymnasium as gym
 import numpy as np

@@ -1,5 +1,5 @@
 import numpy as np
-from environment.jacks_car_rental import JacksCarRental
+from environment.dynamic_programming.jacks_car_rental import JacksCarRental
 from utils.general import set_filepath
 
 

@@ -7,8 +7,8 @@ matplotlib.use('TkAgg')
 
 
 CWD = os.getcwd()
-POLICY_DIR = os.path.join(CWD, ".data", "dynamic_programming", "policy_iteration", "policy")
-VALUE_DIR = os.path.join(CWD, ".data", "dynamic_programming", "policy_iteration", "value")
+POLICY_DIR = os.path.join(CWD, "../.data", "dynamic_programming", "policy_iteration", "policy")
+VALUE_DIR = os.path.join(CWD, "../.data", "dynamic_programming", "policy_iteration", "value")
 
 
 def plot_policies():

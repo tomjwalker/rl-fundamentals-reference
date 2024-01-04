@@ -1,5 +1,5 @@
 from algorithms.bandits.epsilon_greedy import EpsilonGreedy
-from environment.k_armed_bandit import KArmedTestbed
+from environment.bandits.k_armed_bandit import KArmedTestbed
 
 import numpy as np
 import matplotlib
@@ -35,8 +35,6 @@ class UpperConfidenceBound(EpsilonGreedy):
 
 
 def main():
-    from environment.k_armed_bandit import KArmedBandit
-
     # Set the random seed
     random_seed = 0
     np.random.seed(random_seed)
