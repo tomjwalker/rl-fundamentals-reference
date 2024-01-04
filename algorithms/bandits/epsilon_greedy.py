@@ -2,7 +2,7 @@
 #    - Agent and environment instantiated separately, in a run() function / script?
 #    - `.train` method streamlined, better metric logging etc.
 #    - Seeding, for reproducibility?
-from environment.k_armed_bandit import KArmedTestbed
+from environment.bandits.k_armed_bandit import KArmedTestbed
 from utils.general import argmax
 
 import numpy as np
