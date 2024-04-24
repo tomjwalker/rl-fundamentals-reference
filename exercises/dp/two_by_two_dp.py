@@ -57,6 +57,47 @@ def get_env(type):
     return dynamics_table
 
 
+def argmax_equiprob_ties(array):
+    """
+    Returns the index of the maximum value in the array. In the case of ties, weights these equiprobably.
+
+    For example, if the array is [0, 1, 1, 0], then the function will return [0, 0.5, 0.5, 0].
+
+    Args:
+        array (np.ndarray): The array to find the argmax_equiprob_ties of.
+
+    Returns:
+        np.ndarray: The argmax_equiprob_ties of the array.
+    """
+    max_value = np.max(array)
+    max_indices = np.where(array == max_value)[0]
+    return (np.eye(len(array))[max_indices].sum(axis=0)) / len(max_indices)
+
+
+def plot_log_subplot(log, state, ax=None, figsize=(10, 10)):
+    """
+    Creates a subplot showing the value of a state over time.
+
+    Args:
+        log (dict): A dictionary containing state values over iterations.
+        state (int): The state number to plot.
+        ax (matplotlib.axes.Axes, optional): An existing axis to plot on.
+            If None, a new subplot is created.
+        figsize (tuple, optional): Figure size if a new subplot is created.
+            Defaults to (10, 3).
+    """
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)  # Create fig if necessary
+
+    ax.plot(log[state], marker="o")
+    ax.set_title(f"State {state}; value = {round(log[state][-1], 3)}; iterations = {len(log[state]) - 1}")
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Value")
+
+    return ax
+
+
 def get_policy(policy_type, env_type):
 
     if policy_type == "equiprobable":
@@ -72,8 +113,6 @@ def get_policy(policy_type, env_type):
         raise ValueError(f"Unrecognised policy_type: {policy_type}")
 
     return policy
-
-GAMMA = 0.5
 
 
 def get_dynamics(state, action):
@@ -93,7 +132,30 @@ def get_dynamics(state, action):
     return dynamics
 
 
-def evaluate_policy(policy, gamma, theta=1e-10):
+def initialise_artefacts(env, initial_policy="equiprobable"):
+    """
+    Initialise the value and policy artefacts.
+
+    Args:
+        env (pandas.DataFrame): The environment dynamics.
+        initial_policy (str): The initial policy to use.
+
+    Returns:
+        dict: A dictionary containing the value and policy artefacts.
+    """
+
+    states = DYNAMICS_TABLE["state"].unique()
+
+    # Initialise value arbitrarily
+    value = np.zeros(len(states) + 1)    # Include terminal state for calculations
+
+    # Get the policy
+    policy = get_policy(initial_policy, env_type)
+
+    return {"value": value, "policy": policy}
+
+
+def evaluate_policy(policy, value, gamma, theta=1e-10):
     """
     Evaluate a policy.
 
@@ -107,10 +169,7 @@ def evaluate_policy(policy, gamma, theta=1e-10):
     states = DYNAMICS_TABLE["state"].unique()
     actions = DYNAMICS_TABLE["action"].unique()
 
-    # Initialise value arbitrarily
-    value = np.zeros(len(states) + 1)    # Include terminal state for calculations
-
-    log = {state: [] for state in states}
+    log = {state: [value[state]] for state in states}
 
     # Iterate until convergence
     while True:
@@ -135,36 +194,109 @@ def evaluate_policy(policy, gamma, theta=1e-10):
     return value, log
 
 
-def plot_log(log):
+def improve_policy(value, policy, gamma):
     """
-    Figure of 3x1 subplots, with each subplot showing the value of a state over time.
-    Each axis is labelled with the state number, as well as the final value of the state.
+    Improve a policy.
+
+    Args:
+        value (np.ndarray): The value of the policy.
+        policy (np.ndarray): The policy to improve.
+
+    Returns:
+        policy (np.ndarray): The improved policy.
+        policy_stable (bool): Whether the policy is stable. A flag to terminate the policy iteration.
     """
 
-    fig, axes = plt.subplots(3, 1, figsize=(10, 10))
-    for state, ax in zip(log.keys(), axes):
-        ax.plot(log[state], marker="o")
-        ax.set_title(f"State {state}; value = {round(log[state][-1], 3)}; iterations = {len(log[state])}")
-        ax.set_xlabel("Iteration")
-        ax.set_ylabel("Value")
+    states = DYNAMICS_TABLE["state"].unique()
+    actions = DYNAMICS_TABLE["action"].unique()
+    policy_stable = True
 
-    plt.tight_layout()
-    plt.show()
+    for state in states:
+        old_action = policy[state].copy()
+        action_returns = np.zeros(len(actions))
+        for action in actions:
+            dynamics = get_dynamics(state, action)
+            action_returns[action] = np.sum(
+                dynamics["probability"] * (dynamics["reward"] + gamma * value[dynamics["next_state"]])
+            )
+        policy[state] = argmax_equiprob_ties(action_returns)
+        # Check if policy is stable
+        if not np.array_equal(old_action, policy[state]):
+            policy_stable = False
+
+    return policy, policy_stable
+
+
+def iterate_policy(policy, value, gamma, theta=1e-10):
+    """
+    Iterate a policy until convergence.
+
+    Args:
+        policy (np.ndarray): The policy to iterate.
+        value (np.ndarray): The value of the policy.
+        gamma (float): The discount factor.
+        theta (float): The convergence threshold.
+
+    Returns:
+        np.ndarray: The optimal policy.
+    """
+    policy_stable = False
+    num_iterations = 0
+    plots_per_row = 3  # Customize this!
+    fig, axes = plt.subplots(nrows=1, ncols=plots_per_row, figsize=(15, 5))  # Initial figure layout
+    axes = axes.flatten()
+
+    while not policy_stable:
+        value, log = evaluate_policy(policy, value, gamma, theta)
+        policy, policy_stable = improve_policy(value, policy, gamma)
+
+        print("=" * 20)
+        print(f"Iteration: {num_iterations}")
+        print(f"Value: {value}")
+        print(f"Policy: {policy}")
+
+        # Plotting Logic
+        for state, ax in zip(log.keys(), axes):  # Iterate over axes
+            plot_log_subplot(log, state, ax=ax)
+
+            if (state + 1) % plots_per_row == 0 and state != 0:  # Check if it's time for a new row
+                fig.suptitle(f"Policy Iteration {num_iterations}", fontsize=14)
+                plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust title position
+                fig, axes = plt.subplots(nrows=1, ncols=plots_per_row, figsize=(15, 5))
+                axes = axes.flatten()
+
+        num_iterations += 1
+
+    # Clean up after last iteration
+    fig.suptitle(f"Policy Iteration {num_iterations}", fontsize=14)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust title position
+    for ax in axes[len(log):]:
+        ax.remove()
+
+    return policy, fig
+
 
 
 if __name__ == "__main__":
 
-    env_type = "deterministic"    # "deterministic" or "stochastic"
+    GAMMA = 0.5
+
+    env_type = "stochastic"    # "deterministic" or "stochastic"
     policy_type = "equiprobable"    # "equiprobable" or "optimal"
 
     # Get the environment dynamics
     DYNAMICS_TABLE = get_env(env_type)
 
-    # Get the policy
-    policy = get_policy(policy_type, env_type)
+    # Initialise the value and policy artefacts
+    initialised_artefacts = initialise_artefacts(DYNAMICS_TABLE, initial_policy=policy_type)
+    value = initialised_artefacts["value"]
+    policy = initialised_artefacts["policy"]
 
-    value, log = evaluate_policy(policy, GAMMA, theta=1e-10)
+    # value, log = evaluate_policy(policy, GAMMA, theta=1e-10)
+    # plot_log(log)
+    #
+    # new_policy, policy_stable = improve_policy(value, policy, GAMMA)
+    # print(new_policy)
 
-    print(f"Value: {value}")
-
-    plot_log(log)
+    optimal_policy, results_figure = iterate_policy(policy, value, GAMMA)
+    plt.show()
