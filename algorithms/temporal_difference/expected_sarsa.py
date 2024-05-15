@@ -90,6 +90,7 @@ class ExpectedSarsa:
                 print()
 
 
+# TODO: duplicate of other TD algorithms - shift to common file
 def plot_episode_rewards(episode_rewards, title):
     """
     Plot the episode rewards.

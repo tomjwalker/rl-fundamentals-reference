@@ -188,5 +188,5 @@ def initial_val_experiment():
 
 
 if __name__ == "__main__":
-    # epsilon_sweep_experiment()
-    initial_val_experiment()
+    epsilon_sweep_experiment()
+    # initial_val_experiment()

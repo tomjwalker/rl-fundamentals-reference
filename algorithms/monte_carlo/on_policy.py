@@ -14,6 +14,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 
+# TODO: refactor (as ES)
 def _is_subelement_present(subelement, my_list):
     """
     Helps check if a subelement is present in a list of tuples. Used to check if state has already been seen.
@@ -35,7 +36,7 @@ class MCOnPolicy:
         self.epsilon = epsilon
         self.gamma = gamma
 
-        self.name = "MC Off-Policy"    # For plotting
+        self.name = "MC On-Policy"    # For plotting
 
         self.q_values = None
         self.policy = None
@@ -59,7 +60,8 @@ class MCOnPolicy:
 
     def act(self, state):
         """
-        Epsilon-greedy target_policy already coded in the target_policy, which stores the probabilities of each action for each state.
+        Epsilon-greedy target_policy already coded in the target_policy, which stores the probabilities of each action
+        for each state.
         Just need to sample from the target_policy.
         """
         # If the target_policy is all 0s, then return a random action

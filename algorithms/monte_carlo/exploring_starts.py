@@ -15,6 +15,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 
+# TODO refactor: move to utils.general
 def _is_subelement_present(subelement, my_list):
     """
     Helps check if a subelement is present in a list of tuples. Used to check if state has already been seen.
@@ -41,12 +42,16 @@ class MCControl:
         self.returns = None
         self.reset()
 
+        # TODO: add self.gamma
+
     def _init_policy(self, state_shape):
         """
         Use the target_policy initialisation from Sutton and Barto, pp. 93:
         - If player sum == 20 or 21, stick
         - Otherwise, hit
         """
+        # TODO: environment-specific. Refactor to be more general
+        # TODO: refactor to a common policy class?
         self.policy = np.ones(state_shape, dtype=np.int8)    # 0 = stick, 1 = hit
         self.policy[19:, :, :] = 0
         # self.target_policy[19:21, :, :] = 1

@@ -13,6 +13,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 
+# TODO: move this to utils (as with other MC modules)
 def _is_subelement_present(subelement, my_list):
     """
     Helps check if a subelement is present in a list of tuples. Used to check if state has already been seen.
@@ -53,6 +54,7 @@ class MCOffPolicy:
         state_and_action_shape = state_shape + (self.env.action_space.n,)
         self.q_values = np.zeros(state_and_action_shape)
 
+        # TODO: check this
         # Target target_policy is deterministic (π(s)), and is initialised as argmax of q-values, along the action axis
         self.target_policy = np.argmax(self.q_values, axis=-1)    # np.argmax ensures ties broken consistently
 

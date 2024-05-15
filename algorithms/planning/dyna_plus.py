@@ -33,6 +33,7 @@ class DynaPlus(Dyna):
         # initial values for all state-action pairs)
         # N.B. this is initialised outside the reset() method, as the total number of steps taken is not reset when
         # the environment is reset at the end of an episode
+        # TODO: instead of being similar to self.model, could be initialised similar to q(s, a) with zeros
         self.time_since_last_encountered = self.model.copy()
         for key in self.time_since_last_encountered.keys():
             self.time_since_last_encountered[key] = 0
@@ -41,6 +42,7 @@ class DynaPlus(Dyna):
         super().reset()
 
         # Per footnote on pp 168, model is initialised with (reward=0, next_state=state) for all state-action pairs
+        # TODO: don't need to initialise all state-action pairs, just those requested (?)
         for state in range(self.env.observation_space.n):
             for action in range(self.env.action_space.n):
                 self.model[(state, action)] = (0, state)

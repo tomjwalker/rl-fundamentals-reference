@@ -45,6 +45,7 @@ class Dyna:
 
         # Model is a dictionary of lists, where each list contains tuples of (reward, next_state), and the key is the
         # #(state, action) pair
+        # TODO: refactor so model is nested defaultdict (separate levels for state and action)
         self.model = defaultdict(list)
 
     def update_cumulative_reward(self, reward):

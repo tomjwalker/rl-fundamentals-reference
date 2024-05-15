@@ -1,4 +1,4 @@
-from algorithms.bandits.epsilon_greedy import EpsilonGreedy
+from agents.bandits.epsilon_greedy import EpsilonGreedy
 from environment.bandits.k_armed_bandit import KArmedTestbed
 
 import numpy as np
