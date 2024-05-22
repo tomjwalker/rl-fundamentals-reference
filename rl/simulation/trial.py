@@ -12,6 +12,7 @@ class Trial:
         self.random_seeds = random_seeds if random_seeds is not None else [None] * sessions
 
         self.agent_class = agent_class
+        self.agent = None
         self.environment = environment
         self.sessions = sessions
         self.episodes_per_session = episodes_per_session
@@ -23,9 +24,9 @@ class Trial:
         for session in range(self.sessions):
             if verbose:
                 print(f"Running session {session + 1}/{self.sessions} for {self.agent_class.__name__}...")
-            agent = self.agent_class(self.environment, random_seed=self.random_seeds[session])
-            agent.learn(self.episodes_per_session)
-            self.all_rewards.append(agent.episode_rewards)
+            self.agent = self.agent_class(self.environment, random_seed=self.random_seeds[session])
+            self.agent.learn(self.episodes_per_session)
+            self.all_rewards.append(self.agent.episode_rewards)
 
     def plot(self, color="blue", ax=None, show_std=True):
         """Plots learning curves (rewards per episode). Line is the mean, shaded region is the standard deviation."""
