@@ -15,7 +15,7 @@ plt.ion()
 
 
 # Trial parameters
-sessions = 1
+sessions = 10
 episodes_per_session = 500
 
 # Set up the environment

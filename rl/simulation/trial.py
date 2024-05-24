@@ -17,8 +17,8 @@ class Trial:
         self.sessions = sessions
         self.episodes_per_session = episodes_per_session
         self.render = render
-
         self.all_rewards = []
+        self.loggers = []
 
     def run(self, verbose=True):
         for session in range(self.sessions):
@@ -26,7 +26,8 @@ class Trial:
                 print(f"Running session {session + 1}/{self.sessions} for {self.agent_class.__name__}...")
             self.agent = self.agent_class(self.environment, random_seed=self.random_seeds[session])
             self.agent.learn(self.episodes_per_session)
-            self.all_rewards.append(self.agent.episode_rewards)
+            self.all_rewards.append(self.agent.logger.total_rewards_per_episode)
+            self.loggers.append(self.agent.logger)
 
     def plot(self, color="blue", ax=None, show_std=True):
         """Plots learning curves (rewards per episode). Line is the mean, shaded region is the standard deviation."""

@@ -1,53 +1,85 @@
-# Import custom argmax function
-import pandas as pd
+from rl.algorithms.planning.dyna import Dyna, DynaModel    # DynaPlus inherits from Dyna, so we can reuse a lot of the
+# same code
+# from Dyna
+from rl.common.q_value_table import QValueTable
 
-from rl.utils.general import argmax
-from dyna import Dyna    # DynaPlus inherits from Dyna, so we can reuse a lot of the same code from Dyna
-
-# Import relevant gridworld environment (local implementation of blocking and shortcut maze gridworlds, pp167 of Sutton
-# and Barto (2018))
-# from environment.planning_maze import Maze
-from rl.environment.planning.blocking_maze import BlockingMaze
-from rl.environment.planning.shortcut_maze import ShortcutMaze
-#
-# import gymnasium as gym
 import numpy as np
 import random    # For random choice of state and action from model during planning
 random.seed(42)
 
-import matplotlib
-from matplotlib import pyplot as plt
-matplotlib.use('TkAgg')
+# import matplotlib
+# from matplotlib import pyplot as plt
+# matplotlib.use('TkAgg')
+
+
+class DynaPlusModel(DynaModel):
+    """
+    Model object for the Dyna-plus algorithm, storing the (state, action) -> (reward, next_state) mapping.
+
+    Additional to the DynaModel, when this class initialises a new state, it will include transitions for all
+    actions, including those not yet taken (in these instances, the modelled reward is 0 and the next state is the
+    current state).
+    """
+
+    def __init__(self, num_actions):
+        super().__init__()
+        self.num_actions = num_actions
+
+    def add(self, state, action, reward, next_state):
+
+        # If state is newly encountered, initialise all actions with (reward=0, next_state=state)
+        if state not in self.model.keys():
+            for a in range(self.num_actions):
+                self.model[state][a] = (0, state)
+
+        # Add the actual transition
+        self.model[state][action] = (reward, next_state)
+
+
+class TimeSinceLastEncountered(QValueTable):
+    """
+    Implements the tau(s, a) table for Dyna+ algorithm.
+
+    This is a NumPy array, same size as the Q-value table, initialised with zeros, so can base this class on the
+    QValueTable class, which comes with methods:
+    - get(state, action) -> value
+    - update(state, action, value)
+
+    We can extend this class with a method to increment all values by 1, except for a single (state, action) pair, which
+    is reset to 0.
+    """
+
+    def __init__(self, num_states, num_actions):
+        super().__init__(num_states, num_actions)
+
+    def increment(self, state, action):
+        self.values += 1
+        self.update(state, action, 0)
 
 
 class DynaPlus(Dyna):
 
-    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, n_planning_steps=5, kappa=0.001):
-        super().__init__(env, alpha, gamma, epsilon, n_planning_steps)
+    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, n_planning_steps=5, kappa=0.001, random_seed=None):
+
+        # Initialise attributes common to Dyna
+        super().__init__(env, alpha, gamma, epsilon, n_planning_steps, random_seed)
+
         self.name = "Dyna+"
         self.kappa = kappa
-
-        # self.time_since_last_encounter is a dictionary with the same keys as self.model, and values of the number
-        # of timesteps since the (S, A) tuple was last encountered.
-        # If the state-action pair has never been encountered, the value is 0 (ensuring consistent dtype, and equal
-        # initial values for all state-action pairs)
-        # N.B. this is initialised outside the reset() method, as the total number of steps taken is not reset when
+        # TODO: ? N.B. this is initialised outside the reset() method, as the total number of steps taken is not reset
+        #  when
         # the environment is reset at the end of an episode
-        # TODO: instead of being similar to self.model, could be initialised similar to q(s, a) with zeros
-        self.time_since_last_encountered = self.model.copy()
-        for key in self.time_since_last_encountered.keys():
-            self.time_since_last_encountered[key] = 0
+        self.model = None
+        self.time_since_last_encountered = None
+        self.reset()
 
     def reset(self):
         super().reset()
 
-        # Per footnote on pp 168, model is initialised with (reward=0, next_state=state) for all state-action pairs
-        # TODO: don't need to initialise all state-action pairs, just those requested (?)
-        for state in range(self.env.observation_space.n):
-            for action in range(self.env.action_space.n):
-                self.model[(state, action)] = (0, state)
+        self.model = DynaPlusModel(self.env.action_space.n)
+        self.time_since_last_encountered = TimeSinceLastEncountered(self.env.observation_space.n, self.env.action_space.n)
 
-    def train(self, num_episodes=500):
+    def learn(self, num_episodes=500):
 
         for episode in range(num_episodes):
 
@@ -68,14 +100,11 @@ class DynaPlus(Dyna):
                 # Take action A, observe R, S' (**c**)
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
 
-                # TODO: temp debug check
-                if self.env.total_steps == 2999:
-                    print("debug")
-
                 # Update Q(S, A) (**d**)
-                best_next_action = argmax(self.q_values[next_state, :])
-                td_target = reward + self.gamma * self.q_values[next_state, best_next_action]
-                self.q_values[state][action] += self.alpha * (td_target - self.q_values[state][action])
+                td_target = reward + self.gamma * self.q_values.get(next_state, self.q_values.get_max_action(next_state))
+                td_error = td_target - self.q_values.get(state, action)
+                new_value = self.q_values.get(state, action) + self.alpha * td_error
+                self.q_values.update(state, action, new_value)
 
                 # Update logs
                 episode_reward += reward
@@ -83,36 +112,32 @@ class DynaPlus(Dyna):
                 self.update_cumulative_reward(reward)
 
                 # Update model (**e**).
-                # TODO: NB, values are single (reward, next_state) tuples, not lists of tuples unlike current Dyna
-                # Model is a dictionary: {(state, action): (reward, next_state)}. Initialised with (reward=0,
-                # next_state=state), so replace this with actual values from environment
-                self.model[(state, action)] = (reward, next_state)
+                self.model.add(state, action, reward, next_state)
+
                 # Update time since last encountered
-                # i. Increment all values by 1
-                for key in self.time_since_last_encountered.keys():
-                    self.time_since_last_encountered[key] += 1
-                # ii. Set time since last encountered for current state-action pair to 0
-                self.time_since_last_encountered[(state, action)] = 0
+                self.time_since_last_encountered.increment(state, action)
 
                 # Loop for n planning steps, and perform planning updates (**f**)
                 for _ in range(self.n_planning_steps):
 
-                    # Choose a random, previously observed state and action (**f.i, f.ii**)
-                    (state, action) = random.choice(list(self.model.keys()))
+                    # Choose a random, previously observed state and any action (**f.i, f.ii**)
+                    (state, action) = self.model.sample_state_action()
 
                     # TODO: different from Dyna (no values as lists)
-                    # Get reward and next state from model (N.B. unlike S&B, this accounts for stochasticity in the
-                    # environment) (**f.iii**)
-                    # Make sure next state from learning is not mixed up with next state from planning (for S <- S')
-                    (reward, next_state_plan) = self.model[(state, action)]
-                    time_since_last_encountered = self.time_since_last_encountered[(state, action)]
+                    # Get reward and next state from model (**f.iii**)
+                    # `next_state_plan` ensures next state from learning is not mixed up with next state from planning (for S <- S')
+                    reward, next_state_plan = self.model.get(state, action)
+
+                    # Get time since last encountered for (s, a)
+                    time_since_last_encountered = self.time_since_last_encountered.get(state, action)
 
                     # Update Q(S, A), taking as target the q-learning TD target **with Dyna-Q+** additional term:
                     # TD_target = R + gamma * max_a Q(S', a) + kappa * sqrt(time_since_last_encountered) (**f.iv**)
-                    best_next_action = argmax(self.q_values[next_state_plan, :])
-                    td_target = reward + self.gamma * self.q_values[next_state_plan, best_next_action] + \
-                        self.kappa * np.sqrt(time_since_last_encountered)
-                    self.q_values[state][action] += self.alpha * (td_target - self.q_values[state][action])
+                    reward_with_bonus = reward + self.kappa * np.sqrt(time_since_last_encountered)
+                    td_target = reward_with_bonus + self.gamma * np.max(self.q_values.get(next_state_plan))
+                    td_error = td_target - self.q_values.get(state, action)
+                    new_value = self.q_values.get(state, action) + self.alpha * td_error
+                    self.q_values.update(state, action, new_value)
 
                 # S <- S'
                 state = next_state
@@ -123,69 +148,3 @@ class DynaPlus(Dyna):
             # Update logs
             self.episode_rewards.append(episode_reward)
             self.episode_steps.append(episode_steps)
-
-            if episode % (num_episodes // 10) == 0:
-                print(f"Episode {episode}")
-                print(f"Cumulative reward: {self.cumulative_reward[-1]}")
-                print()
-
-
-def run():
-
-    # Run parameters
-    env_specs = {
-        "BlockingMaze": {
-            "env": BlockingMaze,
-            "train_episodes": 3000,
-            "ylim": 150,
-            "xlim": 3000,
-        },
-        "ShortcutMaze": {
-            "env": ShortcutMaze,
-            "train_episodes": 6000,
-            "ylim": 400,
-            "xlim": 6000,
-        },
-    }
-
-    ENVIRONMENT = "ShortcutMaze"
-
-    # train_episodes = 3000
-    train_episodes = env_specs[ENVIRONMENT]["train_episodes"]
-    gamma = 0.95
-    epsilon = 0.1
-    alpha = 0.5
-    planning_steps = 5
-    run_specs = {
-        "model": [Dyna, DynaPlus],
-        "colour": ["blue", "red"],
-        "label": ["Dyna-Q", "Dyna-Q+"],
-    }
-    run_specs = pd.DataFrame(run_specs)
-
-    for i, row in run_specs.iterrows():
-
-        # Create the environment
-        env = env_specs[ENVIRONMENT]["env"]()
-
-        # Create and learn the agent
-        rl_loop = row["model"](env, gamma=gamma, alpha=alpha, epsilon=epsilon, n_planning_steps=planning_steps)
-        rl_loop.learn(num_episodes=train_episodes)
-
-        # Get cumulative rewards
-        episode_cumulative_rewards = rl_loop.cumulative_reward
-
-        # Plot the results
-        plt.plot(episode_cumulative_rewards, color=row["colour"], label=row["label"])
-
-    plt.ylim(bottom=0, top=env_specs[ENVIRONMENT]["ylim"])    # Set y-limits after all plots are generated
-    plt.xlim(left=0, right=env_specs[ENVIRONMENT]["xlim"])    # Set x-limits after all plots are generated
-    plt.xlabel("Episode")
-    plt.ylabel("Episode steps")
-    plt.title(f"Episode steps for Dyna agent (gamma={gamma})")
-    plt.legend()
-    plt.show()
-
-
-if __name__ == "__main__":
-    run()
