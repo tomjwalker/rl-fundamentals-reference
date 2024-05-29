@@ -49,14 +49,10 @@ class Dyna(TemporalDifferenceAgent):
         # Initialise common Temporal Difference agent attributes: q_values, policy, episode_rewards
         super().__init__(env, gamma, alpha, epsilon, random_seed)
 
-        # Used for plotting cum reward vs training step plots (see Sutton and Barto, 2018, pp 167)
-        self.cumulative_reward = []
-
         # Initialise Dyna-specific attributes
         self.name = "Dyna"
         self.n_planning_steps = n_planning_steps
         self.model = None
-        self.episode_steps = None
         self.reset()
 
     def reset(self):
@@ -65,14 +61,7 @@ class Dyna(TemporalDifferenceAgent):
         super().reset()
 
         # Initialise Dyna-specific attributes
-        self.episode_steps = []  # Stores total steps for each episode
         self.model = DynaModel()
-
-    def update_cumulative_reward(self, reward):
-        if len(self.cumulative_reward) == 0:
-            self.cumulative_reward.append(reward)
-        else:
-            self.cumulative_reward.append(reward + self.cumulative_reward[-1])
 
     def learn(self, num_episodes=500):
 
@@ -80,10 +69,6 @@ class Dyna(TemporalDifferenceAgent):
 
             # Initialise S (**a**)
             state, _ = self.env.reset()
-
-            # Initialise logging variables
-            episode_reward = 0
-            episode_steps = 0
 
             # Loop over each step of episode, until S is terminal
             done = False
@@ -102,10 +87,7 @@ class Dyna(TemporalDifferenceAgent):
                 self.q_values.update(state, action, new_value)
 
                 # Update logs
-                # TODO: unify with TD algorithms?
-                episode_reward += reward
-                episode_steps += 1
-                self.update_cumulative_reward(reward)
+                self.logger.log_timestep(reward)
 
                 # Update model (**e**).
                 self.model.add(state, action, reward, next_state)
@@ -133,8 +115,7 @@ class Dyna(TemporalDifferenceAgent):
                 done = terminated or truncated
 
             # Update logs
-            self.episode_rewards.append(episode_reward)
-            self.episode_steps.append(episode_steps)
+            self.logger.log_episode()
 
 
 def run():
@@ -161,7 +142,7 @@ def run():
         rl_loop.learn(num_episodes=train_episodes)
 
         # Plot the results
-        plt.plot(rl_loop.episode_steps, color=row["colour"], label=row["label"])
+        plt.plot(rl_loop.logger.steps_per_episode, color=row["colour"], label=row["label"])
 
     plt.ylim(bottom=0, top=800)    # Set y-limits after all plots are generated
     plt.xlabel("Episode")

@@ -3,15 +3,19 @@ import numpy as np
 
 class ResultsLogger:
     def __init__(self, log_total_reward=True, log_steps_per_episode=True, log_cumulative_reward=True):
+
+        # Boolean flags for selecting which logging to perform
         self.log_total_reward = log_total_reward
         self.log_steps_per_episode = log_steps_per_episode
         self.log_cumulative_reward = log_cumulative_reward
 
+        # TODO: rename?
         # Intra-episode logging
         self.total_rewards_per_episode = []
         self.steps_per_episode = []
         self.episode_reward = 0
 
+        # TODO: rename?
         # Inter-episode logging
         self.cumulative_rewards = []
         self.total_rewards = 0

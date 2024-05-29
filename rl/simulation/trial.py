@@ -6,42 +6,72 @@ from matplotlib import pyplot as plt
 
 
 class Trial:
-    def __init__(self, agent_class, environment, sessions=10, episodes_per_session=1000, random_seeds=None,
-                 render=False):
+    def __init__(self, agent_class, environment_class, sessions=10, episodes_per_session=1000, random_seeds=None,
+                 render=False, **agent_kwargs):
 
         self.random_seeds = random_seeds if random_seeds is not None else [None] * sessions
 
         self.agent_class = agent_class
         self.agent = None
-        self.environment = environment
+        self.environment_class = environment_class
+        self.environment = None
         self.sessions = sessions
         self.episodes_per_session = episodes_per_session
         self.render = render
+        self.agent_kwargs = agent_kwargs
         self.all_rewards = []
         self.loggers = []
 
     def run(self, verbose=True):
         for session in range(self.sessions):
+
             if verbose:
                 print(f"Running session {session + 1}/{self.sessions} for {self.agent_class.__name__}...")
-            self.agent = self.agent_class(self.environment, random_seed=self.random_seeds[session])
+
+            # Initialise environment
+            self.environment = self.environment_class()
+
+            # Update random_seed for the current session
+            self.agent_kwargs["random_seed"] = self.random_seeds[session]
+
+            self.agent = self.agent_class(self.environment, **self.agent_kwargs)
             self.agent.learn(self.episodes_per_session)
             self.all_rewards.append(self.agent.logger.total_rewards_per_episode)
             self.loggers.append(self.agent.logger)
 
-    def plot(self, color="blue", ax=None, show_std=True):
+    def plot(self, series_type, color="blue", ax=None, show_std=True, std_alpha=0.3):
         """Plots learning curves (rewards per episode). Line is the mean, shaded region is the standard deviation."""
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 5))
 
-        all_rewards = np.array(self.all_rewards)
-        mean_rewards = np.mean(all_rewards, axis=0)
-        std_rewards = np.std(all_rewards, axis=0)
+        if series_type == "total_rewards_per_episode":
+            series = [logger.total_rewards_per_episode for logger in self.loggers]
+            xlabel = "Episodes"
+            ylabel = "Total reward during episode"
+        elif series_type == "steps_per_episode":
+            series = [logger.steps_per_episode for logger in self.loggers]
+            xlabel = "Episodes"
+            ylabel = "Steps per episode"
+        elif series_type == "cumulative_rewards":
+            series = [logger.cumulative_rewards for logger in self.loggers]
+            xlabel = "Timesteps"
+            ylabel = "Cumulative reward"
+        else:
+            raise ValueError(f"Unknown series type: {series_type}")
 
-        ax.plot(mean_rewards, color=color, label=self.agent_class.__name__)
+        # Find the minimum length of the series
+        min_length = min([len(s) for s in series])
+
+        # Trim the series to the minimum length
+        trimmed_series = np.array([s[:min_length] for s in series])
+
+        mean_series = np.mean(trimmed_series, axis=0)
+        std_series = np.std(trimmed_series, axis=0)
+
+        ax.plot(mean_series, color=color, label=self.agent_class.__name__)
         if show_std:
-            ax.fill_between(range(len(mean_rewards)), mean_rewards - std_rewards, mean_rewards + std_rewards,
-                            color=color, alpha=0.3)
+            ax.fill_between(range(len(mean_series)), mean_series - std_series, mean_series + std_series,
+                            color=color, alpha=std_alpha)
 
-        ax.set_xlabel("Episodes")
-        ax.set_ylabel("Total reward during episode")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)

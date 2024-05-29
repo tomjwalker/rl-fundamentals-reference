@@ -28,7 +28,7 @@ class BlockingMaze:
 
         # "#" = standard, "S" = start, "G" = goal, "W" = wall
 
-        initial_layout = np.array(
+        self.initial_layout = np.array(
             [
                 ["#", "#", "#", "#", "#", "#", "#", "#", "G"],
                 ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
@@ -40,7 +40,7 @@ class BlockingMaze:
             dtype=object
         )
 
-        self.layout = initial_layout
+        self.layout = self.initial_layout
 
         self.action_space = Discrete(4)
         # self.observation_space = Box(low=0, high=self.layout.shape[1] - 1, shape=(2, ), dtype=int)
@@ -164,7 +164,7 @@ class BlockingMaze:
         # # # TODO: Remove this block (/replace with proper tests. Temp check)
         # next_state = self.flatten(_next_state)
         # if self.total_steps < 1000:
-        #     if self.state == 44:    # Start state
+        #     if self.state == 44:    # State just below changing cell
         #         if action == 0:     # Move up
         #             assert next_state == 35    # Should be allowed to move up initially
         #         elif action == 1:   # Move right
@@ -187,7 +187,6 @@ class BlockingMaze:
         #             assert next_state == 43
         #         else:
         #             raise ValueError(f"Invalid action {action} and next state {next_state} from start state 18")
-
 
         # Update the agent's position
         self._state = _next_state

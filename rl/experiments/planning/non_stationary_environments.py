@@ -25,121 +25,72 @@ def run():
             "train_episodes": 400,
             "ylim": 150,
             "xlim": 3000,
+            "n_runs": 5,
         },
         "ShortcutMaze": {
             "env": ShortcutMaze,
             "train_episodes": 400,
             "ylim": 400,
             "xlim": 6000,
+            "n_runs": 5,
         },
     }
 
     environment_name = "ShortcutMaze"
 
-    # TODO:
-    n_runs = 30
+    dyna_kwargs = {
+        "gamma": 0.95,
+        "epsilon": 0.1,
+        "alpha": 0.5,
+        "n_planning_steps": 50,
+    }
 
-    # train_episodes = 3000
-    train_episodes = env_specs[environment_name]["train_episodes"]
-    gamma = 0.95
-    epsilon = 0.1
-    alpha = 0.5
-    planning_steps = 50
+    dyna_plus_kwargs = dyna_kwargs.copy()
+    dyna_plus_kwargs["kappa"] = 0.001
+
     run_specs = {
         "model": [Dyna, DynaPlus],
         "colour": ["blue", "red"],
         "label": ["Dyna-Q", "Dyna-Q+"],
+        "kwargs": [dyna_kwargs, dyna_plus_kwargs],
     }
     run_specs = pd.DataFrame(run_specs)
 
+    # Set up the plot
+    fig, ax = plt.subplots(figsize=(10, 5))
+
     for i, row in run_specs.iterrows():
+        # Get the environment class
+        env_class = env_specs[environment_name]["env"]
 
-        # Create the environment
-        env = env_specs[environment_name]["env"]()
+        # Initialise the trial
+        trial = Trial(
+            agent_class=row["model"],
+            environment_class=env_class,
+            sessions=env_specs[environment_name]["n_runs"],
+            episodes_per_session=env_specs[environment_name]["train_episodes"],
+            random_seeds=None,
+            **row["kwargs"],
+        )
 
-        # Create and learn the agent
-        rl_loop = row["model"](env, gamma=gamma, alpha=alpha, epsilon=epsilon, n_planning_steps=planning_steps)
-        rl_loop.learn(num_episodes=train_episodes)
-
-        # Get cumulative rewards
-        episode_cumulative_rewards = rl_loop.cumulative_reward
+        # Run the trial
+        trial.run()
 
         # Plot the results
-        plt.plot(episode_cumulative_rewards, color=row["colour"], label=row["label"])
+        trial.plot(
+            series_type="cumulative_rewards",
+            color=row["colour"],
+            show_std=True,
+            std_alpha=0.1,
+            ax=ax,
+        )
 
     plt.ylim(bottom=0, top=env_specs[environment_name]["ylim"])    # Set y-limits after all plots are generated
     plt.xlim(left=0, right=env_specs[environment_name]["xlim"])    # Set x-limits after all plots are generated
-    plt.xlabel("Episode")
-    plt.ylabel("Episode steps")
-    plt.title(f"Episode steps for Dyna agent (gamma={gamma})")
+    plt.title(f"Episode steps for Dyna agent (gamma={dyna_kwargs['gamma']})")
     plt.legend()
     plt.show()
 
 
-def run_2():
-
-        # Run parameters
-        env_specs = {
-            "BlockingMaze": {
-                "env": BlockingMaze,
-                "train_episodes": 400,
-                "ylim": 150,
-                "xlim": 3000,
-                "n_runs": 2,
-            },
-            "ShortcutMaze": {
-                "env": ShortcutMaze,
-                "train_episodes": 400,
-                "ylim": 400,
-                "xlim": 6000,
-                "n_runs": 2,
-            },
-        }
-
-        environment_name = "ShortcutMaze"
-        gamma = 0.95
-        epsilon = 0.1
-        alpha = 0.5
-        planning_steps = 50
-        run_specs = {
-            "model": [Dyna, DynaPlus],
-            "colour": ["blue", "red"],
-            "label": ["Dyna-Q", "Dyna-Q+"],
-        }
-        run_specs = {
-            "model": [Dyna],
-            "colour": ["blue"],
-            "label": ["Dyna-Q"],
-        }
-        run_specs = pd.DataFrame(run_specs)
-
-        for i, row in run_specs.iterrows():
-            # Create the environment
-            env = env_specs[environment_name]["env"]()
-
-            # Initialise the trial
-            trial = Trial(
-                row["model"],
-                env,
-                sessions=env_specs[environment_name]["n_runs"],
-                episodes_per_session=env_specs[environment_name]["train_episodes"],
-                random_seeds=None
-            )
-
-            # Run the trial
-            trial.run()
-
-            # Plot the results
-            trial.plot(color=row["colour"], show_std=False)
-
-        plt.ylim(bottom=0, top=env_specs[environment_name]["ylim"])    # Set y-limits after all plots are generated
-        plt.xlim(left=0, right=env_specs[environment_name]["xlim"])    # Set x-limits after all plots are generated
-        plt.xlabel("Episode")
-        plt.ylabel("Episode steps")
-        plt.title(f"Episode steps for Dyna agent (gamma={gamma})")
-        plt.legend()
-        plt.show()
-
-
 if __name__ == "__main__":
-    run_2()
+    run()

@@ -67,8 +67,7 @@ class DynaPlus(Dyna):
         self.name = "Dyna+"
         self.kappa = kappa
         # TODO: ? N.B. this is initialised outside the reset() method, as the total number of steps taken is not reset
-        #  when
-        # the environment is reset at the end of an episode
+        #  when the environment is reset at the end of an episode
         self.model = None
         self.time_since_last_encountered = None
         self.reset()
@@ -107,9 +106,7 @@ class DynaPlus(Dyna):
                 self.q_values.update(state, action, new_value)
 
                 # Update logs
-                episode_reward += reward
-                episode_steps += 1
-                self.update_cumulative_reward(reward)
+                self.logger.log_timestep(reward)
 
                 # Update model (**e**).
                 self.model.add(state, action, reward, next_state)
@@ -146,5 +143,4 @@ class DynaPlus(Dyna):
                 done = terminated or truncated
 
             # Update logs
-            self.episode_rewards.append(episode_reward)
-            self.episode_steps.append(episode_steps)
+            self.logger.log_episode()
