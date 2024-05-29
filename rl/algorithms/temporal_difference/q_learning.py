@@ -1,26 +1,18 @@
-import gymnasium as gym
 from rl.algorithms.common.td_agent import TemporalDifferenceAgent
-
-import matplotlib
-from matplotlib import pyplot as plt
-matplotlib.use('TkAgg')
 
 
 class QLearning(TemporalDifferenceAgent):
 
-    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, random_seed=None):
-        super().__init__(env, gamma, alpha, epsilon, random_seed)
+    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, logger=None, random_seed=None):
+        super().__init__(env, gamma, alpha, epsilon, logger, random_seed)
         self.name = "Q-Learning"
 
-    def learn(self, num_episodes=500):
+    def learn(self, num_episodes: int = 500) -> None:
 
         for episode in range(num_episodes):
 
             # Initialise S
             state, _ = self.env.reset()
-
-            # Initialise reward counter
-            episode_reward = 0
 
             # Loop over each step of episode, until S is terminal
             done = False
@@ -42,43 +34,10 @@ class QLearning(TemporalDifferenceAgent):
                 state = next_state
 
                 # Add reward to episode reward
-                episode_reward += reward
+                self.logger.log_timestep(reward)
 
                 # If S is terminal, then episode is done (exit loop)
                 done = terminated or truncated
 
             # Add episode reward to list
-            self.episode_rewards.append(episode_reward)
-
-
-def plot_episode_rewards(episode_rewards, title):
-    """
-    Plot the episode rewards.
-    """
-    # Plot the episode rewards
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(episode_rewards)
-    ax.set_xlabel("Episode")
-    ax.set_ylabel("Episode reward")
-    # Set y-limits
-    ax.set_ylim([-100, 0])
-    ax.set_title(title)
-    plt.show()
-
-
-def run():
-
-    # Run parameters
-    train_episodes = 1000
-
-    # Create the environment
-    env = gym.make("CliffWalking-v0")
-    rl_loop = QLearning(env)
-    rl_loop.learn(num_episodes=train_episodes)
-
-    # Plot the results
-    plot_episode_rewards(rl_loop.episode_rewards, rl_loop.name)
-
-
-if __name__ == "__main__":
-    run()
+            self.logger.log_episode()

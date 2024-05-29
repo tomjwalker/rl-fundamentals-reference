@@ -1,3 +1,6 @@
+# TODO: hyperparameter sweep as pp. 133 of Sutton and Barto
+
+
 from rl.algorithms.temporal_difference.q_learning import QLearning
 from rl.algorithms.temporal_difference.expected_sarsa import ExpectedSarsa
 from rl.algorithms.temporal_difference.sarsa import Sarsa
@@ -6,6 +9,9 @@ from rl.environment.temporal_difference.cliff_walking_utils import visualise_q  
 import gymnasium as gym
 import numpy as np
 from matplotlib import pyplot as plt
+
+# Enable interactive mode
+plt.ion()
 
 
 # Trial parameters
@@ -22,6 +28,7 @@ agents = {"Sarsa": (Sarsa, "blue"), "Q-Learning": (QLearning, "red"), "Expected 
 fig, ax = plt.subplots(figsize=(10, 5))
 
 # Run the trials
+trained_agent_last_run = {}
 for agent_name, (agent_class, plot_color) in agents.items():
 
     # Initialise the trial
@@ -39,7 +46,26 @@ for agent_name, (agent_class, plot_color) in agents.items():
     # Plot the results
     trial.plot(color=plot_color, ax=ax, show_std=False)
 
+    # Store the last run's trained agent
+    trained_agent_last_run[agent_name] = trial.agent
+
+# Plot learning curves
 plt.title("Cliff Walking: Learning Curves")
 plt.ylim([-100, 0])
 plt.legend()
 plt.show()
+
+# Plot the Q-values
+fig, ax = plt.subplots(len(agents), 1, figsize=(10, 5 * len(agents)))
+for i, (agent_name, _) in enumerate(agents.items()):
+    visualise_q(trained_agent_last_run[agent_name], ax=ax[i])
+plt.show()
+
+# Keep the plot open
+plt.ioff()
+
+# Wait for user to close the plot
+plt.show()
+
+# Close the plot
+plt.close()

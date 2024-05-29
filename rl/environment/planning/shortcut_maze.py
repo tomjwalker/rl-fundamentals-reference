@@ -28,29 +28,30 @@ class ShortcutMaze(BlockingMaze):
 
     def __init__(self):
 
-            super().__init__()
+        super().__init__()
 
-            self.name = "Shortcut Maze"
+        self.name = "Shortcut Maze"
 
-            self.layout = np.array(
-                [
-                    ["#", "#", "#", "#", "#", "#", "#", "#", "G"],
-                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
-                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
-                    ["#", "W", "W", "W", "W", "W", "W", "W", "W"],
-                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
-                    ["#", "#", "#", "S", "#", "#", "#", "#", "#"],
-                ],
-                dtype=object
-            )
+        self.initial_layout = np.array(
+            [
+                ["#", "#", "#", "#", "#", "#", "#", "#", "G"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                ["#", "W", "W", "W", "W", "W", "W", "W", "W"],
+                ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                ["#", "#", "#", "S", "#", "#", "#", "#", "#"],
+            ],
+            dtype=object
+        )
 
-            self.action_space = Discrete(4)
-            # self.observation_space = Box(low=0, high=self.layout.shape[1] - 1, shape=(2, ), dtype=int)
-            self.observation_space = Discrete(self.layout.size)
+        self.layout = self.initial_layout
 
-            self._state = None
-            self.state = None
-            self.reset()
+        self.action_space = Discrete(4)
+        self.observation_space = Discrete(self.layout.size)
+
+        self._state = None
+        self.state = None
+        self.reset()
 
     def _change_layout(self):
         """
