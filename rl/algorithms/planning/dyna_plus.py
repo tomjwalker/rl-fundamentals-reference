@@ -1,15 +1,7 @@
 from rl.algorithms.planning.dyna import Dyna, DynaModel    # DynaPlus inherits from Dyna, so we can reuse a lot of the
-# same code
-# from Dyna
 from rl.common.q_value_table import QValueTable
 
 import numpy as np
-import random    # For random choice of state and action from model during planning
-random.seed(42)
-
-# import matplotlib
-# from matplotlib import pyplot as plt
-# matplotlib.use('TkAgg')
 
 
 class DynaPlusModel(DynaModel):
@@ -21,8 +13,8 @@ class DynaPlusModel(DynaModel):
     current state).
     """
 
-    def __init__(self, num_actions):
-        super().__init__()
+    def __init__(self, num_actions, random_seed=None):
+        super().__init__(random_seed)
         self.num_actions = num_actions
 
     def add(self, state, action, reward, next_state):
@@ -59,10 +51,11 @@ class TimeSinceLastEncountered(QValueTable):
 
 class DynaPlus(Dyna):
 
-    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, n_planning_steps=5, kappa=0.001, random_seed=None):
+    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, n_planning_steps=5, kappa=0.001,
+                 logger=None, random_seed=None):
 
         # Initialise attributes common to Dyna
-        super().__init__(env, alpha, gamma, epsilon, n_planning_steps, random_seed)
+        super().__init__(env, alpha, gamma, epsilon, n_planning_steps, logger, random_seed)
 
         self.name = "Dyna+"
         self.kappa = kappa
@@ -75,7 +68,7 @@ class DynaPlus(Dyna):
     def reset(self):
         super().reset()
 
-        self.model = DynaPlusModel(self.env.action_space.n)
+        self.model = DynaPlusModel(self.env.action_space.n, self.random_seed)
         self.time_since_last_encountered = TimeSinceLastEncountered(self.env.observation_space.n, self.env.action_space.n)
 
     def learn(self, num_episodes=500):

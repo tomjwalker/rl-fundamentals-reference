@@ -6,7 +6,8 @@ from matplotlib import pyplot as plt
 
 
 class Trial:
-    def __init__(self, agent_class, environment_class, sessions=10, episodes_per_session=1000, random_seeds=None,
+    def __init__(self, agent_class, environment_class=None, environment=None, sessions=10, episodes_per_session=1000,
+                 random_seeds=None,
                  render=False, **agent_kwargs):
 
         self.random_seeds = random_seeds if random_seeds is not None else [None] * sessions
@@ -14,7 +15,7 @@ class Trial:
         self.agent_class = agent_class
         self.agent = None
         self.environment_class = environment_class
-        self.environment = None
+        self.environment = environment
         self.sessions = sessions
         self.episodes_per_session = episodes_per_session
         self.render = render
@@ -28,8 +29,15 @@ class Trial:
             if verbose:
                 print(f"Running session {session + 1}/{self.sessions} for {self.agent_class.__name__}...")
 
-            # Initialise environment
-            self.environment = self.environment_class()
+            # Instantiate env. Different modes depending on whether `environment_class` or `environment` is provided
+            if self.environment_class is not None:
+                # Re-instantiating helpful for the case where environment is non-stationary
+                self.environment = self.environment_class()
+            elif self.environment is not None:
+                # Passing an instantiated environment helpful for Gym environments with gym.make()
+                self.environment.reset()
+            else:
+                raise ValueError("Either `environment_class` or `environment` must be provided.")
 
             # Update random_seed for the current session
             self.agent_kwargs["random_seed"] = self.random_seeds[session]
@@ -47,7 +55,7 @@ class Trial:
         if series_type == "total_rewards_per_episode":
             series = [logger.total_rewards_per_episode for logger in self.loggers]
             xlabel = "Episodes"
-            ylabel = "Total reward during episode"
+            ylabel = "Sum of rewards during episode"
         elif series_type == "steps_per_episode":
             series = [logger.steps_per_episode for logger in self.loggers]
             xlabel = "Episodes"

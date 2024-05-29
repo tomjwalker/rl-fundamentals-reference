@@ -1,22 +1,7 @@
-# Import custom argmax function
-import pandas as pd
-
-from rl.utils.general import argmax
-
 from rl.algorithms.common.td_agent import TemporalDifferenceAgent
-
-# Import relevant gridworld environment (local implementation of gridworld pp165 of Sutton and Barto (2018))
-from rl.environment.planning.planning_maze import Maze
-#
-# import gymnasium as gym
 import numpy as np
 from collections import defaultdict    # For model, with default value of empty list
 import random    # For random choice of state and action from model during planning
-random.seed(42)
-
-import matplotlib
-from matplotlib import pyplot as plt
-matplotlib.use('TkAgg')
 
 
 class DynaModel:
@@ -27,8 +12,14 @@ class DynaModel:
     For the purposes of this repo, we assume a deterministic environment, so the mapping is unique.
     """
 
-    def __init__(self):
+    def __init__(self, random_seed=None):
         self.model = defaultdict(dict)
+        self.random_seed = random_seed
+        if random_seed:
+            self._set_random_seed()
+
+    def _set_random_seed(self):
+        random.seed(self.random_seed)
 
     def add(self, state, action, reward, next_state):
         self.model[state][action] = (reward, next_state)
@@ -44,14 +35,16 @@ class DynaModel:
 
 class Dyna(TemporalDifferenceAgent):
 
-    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, n_planning_steps=5, random_seed=None):
+    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, n_planning_steps=5, logger=None, random_seed=None):
 
         # Initialise common Temporal Difference agent attributes: q_values, policy, episode_rewards
-        super().__init__(env, gamma, alpha, epsilon, random_seed)
+        super().__init__(env, gamma, alpha, epsilon, logger, random_seed)
 
         # Initialise Dyna-specific attributes
         self.name = "Dyna"
         self.n_planning_steps = n_planning_steps
+
+        # Initialise attributes which reset on each new episode
         self.model = None
         self.reset()
 
@@ -61,7 +54,7 @@ class Dyna(TemporalDifferenceAgent):
         super().reset()
 
         # Initialise Dyna-specific attributes
-        self.model = DynaModel()
+        self.model = DynaModel(self.random_seed)
 
     def learn(self, num_episodes=500):
 
@@ -116,41 +109,3 @@ class Dyna(TemporalDifferenceAgent):
 
             # Update logs
             self.logger.log_episode()
-
-
-def run():
-
-    # Run parameters
-    train_episodes = 50
-    gamma = 0.95
-    alpha = 0.1
-    epsilon = 0.1
-    run_specs = {
-        "planning steps": [0, 5, 50],
-        "colour": ["blue", "green", "red"],
-        "label": ["0 planning steps (direct RL)", "5 planning steps", "50 planning steps"],
-    }
-    run_specs = pd.DataFrame(run_specs)
-
-    for i, row in run_specs.iterrows():
-
-        # Create the environment
-        env = Maze()
-
-        # Create and learn the agent
-        rl_loop = Dyna(env, gamma=gamma, alpha=alpha, epsilon=epsilon, n_planning_steps=row["planning steps"])
-        rl_loop.learn(num_episodes=train_episodes)
-
-        # Plot the results
-        plt.plot(rl_loop.logger.steps_per_episode, color=row["colour"], label=row["label"])
-
-    plt.ylim(bottom=0, top=800)    # Set y-limits after all plots are generated
-    plt.xlabel("Episode")
-    plt.ylabel("Episode steps")
-    plt.title(f"Episode steps for Dyna agent (gamma={gamma})")
-    plt.legend()
-    plt.show()
-
-
-if __name__ == "__main__":
-    run()
