@@ -15,7 +15,7 @@ plt.ion()
 
 
 # Trial parameters
-sessions = 10
+sessions = 30
 episodes_per_session = 500
 
 # Set up the environment
@@ -33,8 +33,8 @@ for agent_name, (agent_class, plot_color) in agents.items():
 
     # Initialise the trial
     trial = Trial(
-        agent_class,
-        env,
+        agent_class=agent_class,
+        environment=env,
         sessions=sessions,
         episodes_per_session=episodes_per_session,
         random_seeds=np.arange(sessions)
@@ -44,7 +44,12 @@ for agent_name, (agent_class, plot_color) in agents.items():
     trial.run()
 
     # Plot the results
-    trial.plot(color=plot_color, ax=ax, show_std=False)
+    trial.plot(
+        series_type="total_rewards_per_episode",
+        color=plot_color,
+        ax=ax,
+        show_std=False
+    )
 
     # Store the last run's trained agent
     trained_agent_last_run[agent_name] = trial.agent

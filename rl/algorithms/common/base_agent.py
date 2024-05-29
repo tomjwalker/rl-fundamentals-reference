@@ -11,8 +11,6 @@ from gymnasium import Env
 class BaseAgent(ABC):
     """
     Base class from which all agents inherit. Contains common methods and attributes for all the following agents:
-    - Dynamic programming // Policy iteration
-    - Dynamic programming // Value iteration
     - Monte Carlo // On-policy
     - Monte Carlo // Off-policy
     - Temporal difference // SARSA
@@ -21,13 +19,13 @@ class BaseAgent(ABC):
     - Planning // Dyna
     - Planning // Dyna-Q+
     """
-    def __init__(self, env: Union[Env, object], gamma: float, random_seed: Union[None, int]) -> None:
+    def __init__(self, env: Union[Env, object], gamma: float, random_seed: Union[None, int] = None) -> None:
 
         self.name = "Base Agent"
         self.env = env
         self.gamma = gamma
-
         self.random_seed = random_seed
+
         if random_seed is not None:
             self._set_random_seed()
 
