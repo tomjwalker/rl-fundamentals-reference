@@ -4,6 +4,8 @@ from rl.common.q_value_table import QValueTable
 import numpy as np
 
 
+# TODO: cleaner way to deal with observation spaces of different shapes (see QValueTable and TimeSinceLastEncountered)
+
 class DynaPlusModel(DynaModel):
     """
     Model object for the Dyna-plus algorithm, storing the (state, action) -> (reward, next_state) mapping.
@@ -69,7 +71,8 @@ class DynaPlus(Dyna):
         super().reset()
 
         self.model = DynaPlusModel(self.env.action_space.n, self.random_seed)
-        self.time_since_last_encountered = TimeSinceLastEncountered(self.env.observation_space.n, self.env.action_space.n)
+        self.time_since_last_encountered = TimeSinceLastEncountered((self.env.observation_space.n,),
+                                                                    self.env.action_space.n)
 
     def learn(self, num_episodes=500):
 

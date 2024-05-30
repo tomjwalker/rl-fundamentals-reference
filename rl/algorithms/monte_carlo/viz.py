@@ -8,7 +8,7 @@ matplotlib.use('TkAgg')
 
 
 def _generate_3d_value_ax(mc_control, usable_ace=True, fig=None, subplot=111):
-    # Get (state) values for a usable ace target_policy
+    # Get (state) values for a usable ace policy
     if usable_ace:
         values = np.max(mc_control.q_values[:, :, 1, :], axis=2)
         title = "State value: usable ace"
@@ -47,15 +47,15 @@ def _generate_policy_ax(mc_agent, usable_ace=True, fig=None, subplot=111):
 
     # TODO: better as a method of a BaseAgent class, allowing for different specific plot methods for different agents?
 
-    # Based on the type of agent, need to treat the target_policy differently
+    # Based on the type of agent, need to treat the policy differently
     if mc_agent.name == "MC Exploring Starts":
-        # For exploring starts, target_policy is deterministic (π(s)) so the array is 3D with dimensions following the
+        # For exploring starts, policy is deterministic (π(s)) so the array is 3D with dimensions following the
         # state, and cells containing the action to take as an integer (0 = stick, 1 = hit)
         if usable_ace:
-            policy = mc_agent.target_policy[11:22, :, 1]
+            policy = mc_agent.policy[11:22, :, 1]
             title = "Policy: usable ace"
         else:
-            policy = mc_agent.target_policy[11:22, :, 0]
+            policy = mc_agent.policy[11:22, :, 0]
             title = "Policy: no usable ace"
     elif mc_agent.name == "MC On-Policy":
         # Other agents have stochastic policies (π(a|s)) so the array is 4D with dimensions following the state and
@@ -63,19 +63,19 @@ def _generate_policy_ax(mc_agent, usable_ace=True, fig=None, subplot=111):
         # For plotting, need 2D arrays (one each for usable ace and no usable ace). Arrange so cell values are the most
         # likely action to take from that state (i.e. argmax)
         if usable_ace:
-            policy = np.argmax(mc_agent.target_policy[11:22, :, 1, :], axis=2)
+            policy = np.argmax(mc_agent.policy[11:22, :, 1, :], axis=2)
             title = "Policy: usable ace"
         else:
-            policy = np.argmax(mc_agent.target_policy[11:22, :, 0, :], axis=2)
+            policy = np.argmax(mc_agent.policy[11:22, :, 0, :], axis=2)
             title = "Policy: no usable ace"
     elif mc_agent.name == "MC Off-Policy":
-        # For off-policy, target_policy is deterministic (π(s)) so the array is 3D with dimensions following the
+        # For off-policy, policy is deterministic (π(s)) so the array is 3D with dimensions following the
         # state, and cells containing the action to take as an integer (0 = stick, 1 = hit)
         if usable_ace:
-            policy = mc_agent.target_policy[11:22, :, 1]
+            policy = mc_agent.policy[11:22, :, 1]
             title = "Policy: usable ace"
         else:
-            policy = mc_agent.target_policy[11:22, :, 0]
+            policy = mc_agent.policy[11:22, :, 0]
             title = "Policy: no usable ace"
 
     # If ax is not provided, create a new 3D axis
@@ -87,7 +87,7 @@ def _generate_policy_ax(mc_agent, usable_ace=True, fig=None, subplot=111):
     policy.index = np.arange(11, 22)
     policy.columns = np.arange(1, 12)
 
-    # Plot the target_policy. Use "viridis" colormap. Subplots: target_policy with usable ace, target_policy without usable ace
+    # Plot the policy. Use "viridis" colormap. Subplots: policy with usable ace, policy without usable ace
     sns.heatmap(policy, cmap="viridis", annot=False, fmt="d", ax=ax)
     ax.invert_yaxis()
     ax.set_title(title)
@@ -99,11 +99,11 @@ def _generate_policy_ax(mc_agent, usable_ace=True, fig=None, subplot=111):
 
 def plot_results(mc_control):
     """
-    Uses _generate_3d_value_ax and _generate_policy_ax to plot the state value functions and target_policy, as a 2x2 grid of
+    Uses _generate_3d_value_ax and _generate_policy_ax to plot the state value functions and policy, as a 2x2 grid of
     plots.
 
     Upper row: state value functions (with and without usable ace)
-    Lower row: target_policy (with and without usable ace)
+    Lower row: policy (with and without usable ace)
     """
     fig = plt.figure(figsize=plt.figaspect(1))
     fig, ax_0 = _generate_3d_value_ax(mc_control, usable_ace=True, fig=fig, subplot=221)

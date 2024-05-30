@@ -8,13 +8,13 @@ class EpsilonGreedyPolicy:
         self.epsilon = epsilon
         self.action_space = action_space
 
-    def select_action(self, state: int, q_values: QValueTable) -> int:
+    def select_action(self, state: Tuple[int, ...], q_values: QValueTable) -> int:
         if np.random.random() < self.epsilon:
             return np.random.choice(self.action_space)
         else:
             return q_values.get_max_action(state)
 
-    def compute_probs(self, state: int, q_values: QValueTable) -> np.ndarray:
+    def compute_probs(self, state: Tuple[int, ...], q_values: QValueTable) -> np.ndarray:
         probs = np.ones(self.action_space) * self.epsilon / self.action_space
         best_action = q_values.get_max_action(state)
         probs[best_action] = 1 - self.epsilon + self.epsilon / self.action_space

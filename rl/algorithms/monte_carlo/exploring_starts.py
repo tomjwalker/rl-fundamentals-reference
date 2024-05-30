@@ -6,10 +6,12 @@ TODO:
 
 from rl.algorithms.monte_carlo.viz import plot_results
 from rl.utils.general import argmax
+from rl.algorithms.common.base_agent import BaseAgent
 
 import gymnasium as gym
 import numpy as np
-
+from typing import Union
+from gymnasium import Env
 import matplotlib
 
 matplotlib.use('TkAgg')
@@ -30,19 +32,17 @@ def _is_subelement_present(subelement, my_list):
     return False
 
 
-class MCControl:
+class MCControl(BaseAgent):
 
-    def __init__(self, env):
-        self.env = env
+    def __init__(self, env: Union[Env, object], gamma: float, random_seed: Union[None, int] = None) -> None:
+        super().__init__(env, gamma, random_seed)
 
-        self.name = "MC Exploring Starts"    # For plotting
-
+        # Initialise Monte Carlo-specific attributes
+        self.name = "MC Exploring Starts"  # For plotting
         self.q_values = None
         self.policy = None
         self.returns = None
         self.reset()
-
-        # TODO: add self.gamma
 
     def _init_policy(self, state_shape):
         """
@@ -54,9 +54,6 @@ class MCControl:
         # TODO: refactor to a common policy class?
         self.policy = np.ones(state_shape, dtype=np.int8)    # 0 = stick, 1 = hit
         self.policy[19:, :, :] = 0
-        # self.target_policy[19:21, :, :] = 1
-        # print(self.target_policy[:, :, 0])
-        # print(self.target_policy[:, :, 1])
 
     def reset(self):
         # Get env shape
@@ -77,7 +74,7 @@ class MCControl:
         """Greedy target_policy"""
         return argmax(self.q_values[state])
 
-    def train(self, num_episodes=10000, gamma=1.0):
+    def learn(self, num_episodes=10000):
 
         for episode_idx in range(num_episodes):
 
@@ -109,7 +106,7 @@ class MCControl:
             # Loop through the episode in reverse order, updating the q-values
             g = 0
             for t, (state, action, reward) in enumerate(reversed(episode)):
-                g = gamma * g + reward
+                g = self.gamma * g + reward
 
                 # If the S_t, A_t pair has been seen before, continue.
                 if _is_subelement_present((state, action), episode[:len(episode) - t - 1]):
@@ -132,8 +129,8 @@ def run():
 
     # Instantiate and learn the agent
     env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto
-    mc_control = MCControl(env)
-    mc_control.train(num_episodes=train_episodes)
+    mc_control = MCControl(env, gamma=1.0)
+    mc_control.learn(num_episodes=train_episodes)
 
     # Plot the results
     plot_results(mc_control)
