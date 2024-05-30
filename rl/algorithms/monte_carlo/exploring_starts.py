@@ -5,16 +5,13 @@ TODO:
 
 
 from rl.algorithms.monte_carlo.viz import plot_results
-from rl.utils.general import argmax
-from rl.algorithms.common.base_agent import BaseAgent
+from rl.algorithms.common.mc_agent import MonteCarloAgent
+from rl.common.policy import DeterministicPolicy
 
 import gymnasium as gym
 import numpy as np
 from typing import Union
 from gymnasium import Env
-import matplotlib
-
-matplotlib.use('TkAgg')
 
 
 # TODO refactor: move to utils.general
@@ -32,47 +29,42 @@ def _is_subelement_present(subelement, my_list):
     return False
 
 
-class MCControl(BaseAgent):
+class MCExploringStartsAgent(MonteCarloAgent):
 
     def __init__(self, env: Union[Env, object], gamma: float, random_seed: Union[None, int] = None) -> None:
         super().__init__(env, gamma, random_seed)
 
         # Initialise Monte Carlo-specific attributes
         self.name = "MC Exploring Starts"  # For plotting
-        self.q_values = None
+
         self.policy = None
         self.returns = None
+
         self.reset()
 
     def _init_policy(self, state_shape):
         """
         Use the target_policy initialisation from Sutton and Barto, pp. 93:
-        - If player sum == 20 or 21, stick
-        - Otherwise, hit
+        - If player sum == 20 or 21, stick (0)
+        - Otherwise, hit (1)
         """
         # TODO: environment-specific. Refactor to be more general
         # TODO: refactor to a common policy class?
-        self.policy = np.ones(state_shape, dtype=np.int8)    # 0 = stick, 1 = hit
-        self.policy[19:, :, :] = 0
+        self.policy = DeterministicPolicy(state_shape)
+
+        # Overwrite with initial policy from Sutton and Barto
+        self.policy.value[:19, :, :] = 1
 
     def reset(self):
-        # Get env shape
-        state_shape = ()
-        for space in self.env.observation_space:
-            state_shape += (space.n,)
+
+        super().reset()
 
         # Initialise q-values, target_policy, and returns
-        state_and_action_shape = state_shape + (self.env.action_space.n,)
-        self.q_values = np.zeros(state_and_action_shape)
-        self._init_policy(state_shape)
-        # Returns is a tensor same shape as q-values, but with each element being a list of returns
-        self.returns = np.empty(state_and_action_shape, dtype=object)
-        for index in np.ndindex(state_and_action_shape):
-            self.returns[index] = []
+        self._init_policy(self.state_shape)
 
     def act(self, state):
-        """Greedy target_policy"""
-        return argmax(self.q_values[state])
+        """Deterministic policy"""
+        return self.policy.select_action(state)
 
     def learn(self, num_episodes=10000):
 
@@ -82,28 +74,10 @@ class MCControl(BaseAgent):
             if episode_idx % 1000 == 0:
                 print(f"Episode {episode_idx}")
 
-            # Exploring start selection of S_0 and A_0
-            state, info = self.env.reset()    # S_0
-            action = np.random.randint(0, self.env.action_space.n)    # A_0: choice of {0, 1}
-
             # Generate an episode
-            episode = []
-            while True:
-                next_state, reward, terminated, truncated, info = self.env.step(action)
-                episode.append((state, action, reward))
+            episode = self._generate_episode(exploring_starts=True)
 
-                done = terminated or truncated
-                if done:
-                    break
-
-                state = next_state
-                action = self.act(state)
-
-            # if len(episode) > 5:
-            #     print("interesting!")
-
-            # Once the episode is complete (the `while True` loop has broken), update the q-values and target_policy
-            # Loop through the episode in reverse order, updating the q-values
+            # Loop through the episode in reverse order, updating the q-values and policy
             g = 0
             for t, (state, action, reward) in enumerate(reversed(episode)):
                 g = self.gamma * g + reward
@@ -112,14 +86,16 @@ class MCControl(BaseAgent):
                 if _is_subelement_present((state, action), episode[:len(episode) - t - 1]):
                     continue
 
-                # Add the return to the list of returns for this state-action pair
-                self.returns[state][action].append(g)
-
                 # Update the q-value for this state-action pair
-                self.q_values[state][action] = np.mean(self.returns[state][action])
+                # NewEstimate <- OldEstimate + 1/N(St, At) * (Return - OldEstimate)
+                mc_error = g - self.q_values.get(state, action)
+                self.state_action_counts.update(state, action)
+                step_size = 1 / self.state_action_counts.get(state, action)
+                new_value = self.q_values.get(state, action) + step_size * mc_error
+                self.q_values.update(state, action, new_value)
 
                 # Update the target_policy
-                self.policy[state] = argmax(self.q_values[state][:])
+                self.policy.update(state, self.q_values)
 
 
 def run():
@@ -129,7 +105,7 @@ def run():
 
     # Instantiate and learn the agent
     env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto
-    mc_control = MCControl(env, gamma=1.0)
+    mc_control = MCExploringStartsAgent(env, gamma=1.0)
     mc_control.learn(num_episodes=train_episodes)
 
     # Plot the results

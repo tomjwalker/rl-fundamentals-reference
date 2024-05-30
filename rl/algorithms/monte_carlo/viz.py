@@ -10,10 +10,10 @@ matplotlib.use('TkAgg')
 def _generate_3d_value_ax(mc_control, usable_ace=True, fig=None, subplot=111):
     # Get (state) values for a usable ace policy
     if usable_ace:
-        values = np.max(mc_control.q_values[:, :, 1, :], axis=2)
+        values = np.max(mc_control.q_values.values[:, :, 1, :], axis=2)
         title = "State value: usable ace"
     else:
-        values = np.max(mc_control.q_values[:, :, 0, :], axis=2)
+        values = np.max(mc_control.q_values.values[:, :, 0, :], axis=2)
         title = "State value: no usable ace"
 
     # If ax is not provided, create a new 3D axis
@@ -52,10 +52,10 @@ def _generate_policy_ax(mc_agent, usable_ace=True, fig=None, subplot=111):
         # For exploring starts, policy is deterministic (π(s)) so the array is 3D with dimensions following the
         # state, and cells containing the action to take as an integer (0 = stick, 1 = hit)
         if usable_ace:
-            policy = mc_agent.policy[11:22, :, 1]
+            policy = mc_agent.policy.value[11:22, :, 1]
             title = "Policy: usable ace"
         else:
-            policy = mc_agent.policy[11:22, :, 0]
+            policy = mc_agent.policy.value[11:22, :, 0]
             title = "Policy: no usable ace"
     elif mc_agent.name == "MC On-Policy":
         # Other agents have stochastic policies (π(a|s)) so the array is 4D with dimensions following the state and
@@ -63,19 +63,19 @@ def _generate_policy_ax(mc_agent, usable_ace=True, fig=None, subplot=111):
         # For plotting, need 2D arrays (one each for usable ace and no usable ace). Arrange so cell values are the most
         # likely action to take from that state (i.e. argmax)
         if usable_ace:
-            policy = np.argmax(mc_agent.policy[11:22, :, 1, :], axis=2)
+            policy = np.argmax(mc_agent.policy.value[11:22, :, 1, :], axis=2)
             title = "Policy: usable ace"
         else:
-            policy = np.argmax(mc_agent.policy[11:22, :, 0, :], axis=2)
+            policy = np.argmax(mc_agent.policy.value[11:22, :, 0, :], axis=2)
             title = "Policy: no usable ace"
     elif mc_agent.name == "MC Off-Policy":
         # For off-policy, policy is deterministic (π(s)) so the array is 3D with dimensions following the
         # state, and cells containing the action to take as an integer (0 = stick, 1 = hit)
         if usable_ace:
-            policy = mc_agent.policy[11:22, :, 1]
+            policy = mc_agent.policy.value[11:22, :, 1]
             title = "Policy: usable ace"
         else:
-            policy = mc_agent.policy[11:22, :, 0]
+            policy = mc_agent.policy.value[11:22, :, 0]
             title = "Policy: no usable ace"
 
     # If ax is not provided, create a new 3D axis
