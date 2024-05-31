@@ -2,16 +2,18 @@
 TODO:
     - Figure out why plots not exactly the same as Sutton and Barto
 """
-
+import numpy as np
 
 from rl.algorithms.monte_carlo.viz import plot_results
 from rl.algorithms.common.mc_agent import MonteCarloAgent
 from rl.common.policy import DeterministicPolicy
+from rl.common.results_logger import ResultsLogger
 
 import gymnasium as gym
-import numpy as np
 from typing import Union
 from gymnasium import Env
+
+import matplotlib.pyplot as plt
 
 
 # TODO refactor: move to utils.general
@@ -31,8 +33,15 @@ def _is_subelement_present(subelement, my_list):
 
 class MCExploringStartsAgent(MonteCarloAgent):
 
-    def __init__(self, env: Union[Env, object], gamma: float, random_seed: Union[None, int] = None) -> None:
-        super().__init__(env, gamma, random_seed)
+    def __init__(
+            self,
+            env: Union[Env, object],
+            gamma: float,
+            epsilon: float = None,
+            logger: ResultsLogger = None,
+            random_seed: int = None,
+    ):
+        super().__init__(env, gamma, epsilon, logger, random_seed)
 
         # Initialise Monte Carlo-specific attributes
         self.name = "MC Exploring Starts"  # For plotting
@@ -97,11 +106,18 @@ class MCExploringStartsAgent(MonteCarloAgent):
                 # Update the target_policy
                 self.policy.update(state, self.q_values)
 
+            # Log the episode
+            self.logger.log_episode()
+
+
+def smooth(x, window=1000):
+    return np.convolve(x, np.ones(window), 'valid') / window
+
 
 def run():
 
     # Run parameters
-    train_episodes = 10000
+    train_episodes = 100000
 
     # Instantiate and learn the agent
     env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto
@@ -110,6 +126,10 @@ def run():
 
     # Plot the results
     plot_results(mc_control)
+
+    # Plot total rewards
+    plt.plot(smooth(mc_control.logger.total_rewards_per_episode))
+    plt.show()
 
 
 if __name__ == "__main__":

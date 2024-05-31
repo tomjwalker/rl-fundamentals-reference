@@ -68,12 +68,16 @@ class MonteCarloAgent(BaseAgent):
             state = next_state
             action = self.act(state)
 
+        # Log timestep
+        self.logger.log_timestep(reward)
+
         return episode
 
     def reset(self):
 
         self.q_values = QValueTable(self.state_shape, self.env.action_space.n)
         self.state_action_counts = StateActionCounts(self.state_shape, self.env.action_space.n)
+        self.logger.reset()
 
     def act(self, state):
         raise NotImplementedError
