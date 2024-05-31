@@ -64,6 +64,7 @@ class MCOnPolicy:
         for each state.
         Just need to sample from the target_policy.
         """
+        # TODO: is this epsilon-greedy?
         # If the target_policy is all 0s, then return a random action
         if np.all(self.policy[state][:] == 0):
             return np.random.randint(0, self.env.action_space.n)

@@ -24,7 +24,7 @@ class TemporalDifferenceAgent(BaseAgent):
         self.reset()
 
     def reset(self):
-        self.q_values = QValueTable(self.env.observation_space.n, self.env.action_space.n)
+        self.q_values = QValueTable((self.env.observation_space.n,), self.env.action_space.n)
         self.policy = EpsilonGreedyPolicy(self.epsilon, self.env.action_space.n)
         self.logger.reset()
 
