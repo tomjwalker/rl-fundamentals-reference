@@ -1,5 +1,5 @@
 import numpy as np
-from rl.utils.general import argmax
+from rl.utils.general import argmax_ties_random, argmax_ties_last
 from typing import Tuple, Union
 
 
@@ -20,5 +20,12 @@ class QValueTable:
     def update(self, state: Tuple[int, ...], action: int, value: float) -> None:
         self.values[state][action] = value
 
-    def get_max_action(self, state: Tuple[int, ...]) -> int:
-        return argmax(self.values[state])
+    def get_max_action(self, state: Tuple[int, ...], ties: str = "random") -> int:
+        if ties == "random":
+            return argmax_ties_random(self.values[state])
+        elif ties == "last":
+            return argmax_ties_last(self.values[state])
+        elif ties == "first":
+            return np.argmax(self.values[state])
+        else:
+            raise ValueError(f"Unknown tie-breaking method: {ties}")

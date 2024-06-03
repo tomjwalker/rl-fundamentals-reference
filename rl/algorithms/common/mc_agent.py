@@ -20,6 +20,9 @@ class StateActionCounts:
     def update(self, state, action):
         self.values[state][action] += 1
 
+    def update_importance_sampling(self, state, action, importance_sampling_ratio):
+        self.values[state][action] += importance_sampling_ratio
+
 
 class MonteCarloAgent(BaseAgent):
     """
@@ -93,10 +96,3 @@ class MonteCarloAgent(BaseAgent):
         self.q_values = QValueTable(self.state_shape, self.env.action_space.n)
         self.state_action_counts = StateActionCounts(self.state_shape, self.env.action_space.n)
         self.logger.reset()
-
-    def act(self, state):
-        raise NotImplementedError
-
-    def learn(self, num_episodes=500):
-        # TODO: check default value of num_episodes
-        raise NotImplementedError

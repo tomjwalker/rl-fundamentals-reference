@@ -3,7 +3,7 @@
 #    - `.learn` method streamlined, better metric logging etc.
 #    - Seeding, for reproducibility?
 from rl.environment.bandits.k_armed_bandit import KArmedTestbed
-from rl.utils.general import argmax
+from rl.utils.general import argmax_ties_random
 
 import numpy as np
 import pandas as pd
@@ -55,7 +55,7 @@ class EpsilonGreedy:
         if np.random.random() < self.epsilon:
             return np.random.randint(0, self.num_actions)
         else:
-            return argmax(self.q_values)
+            return argmax_ties_random(self.q_values)
 
     def train(self):
         """
