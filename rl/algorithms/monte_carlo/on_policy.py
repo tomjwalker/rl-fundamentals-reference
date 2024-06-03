@@ -1,6 +1,6 @@
 """
 TODO:
-    - Figure out strange target_policy plots
+    - Figure out strange policy plots
     - Look into this: https://trevormcguire.medium.com/blackjack-stocks-and-reinforcement-learning-ea4014115aeb
 """
 
@@ -8,8 +8,6 @@ TODO:
 from rl.algorithms.monte_carlo.viz import plot_results
 from rl.algorithms.common.mc_agent import MonteCarloAgent
 from rl.common.policy import EpsilonGreedyPolicy
-from rl.common.policy import EpsilonGreedyPolicyMC
-import numpy as np
 
 import gymnasium as gym
 
@@ -61,10 +59,6 @@ class MCOnPolicy(MonteCarloAgent):
             g = 0
             for t, (state, action, reward) in enumerate(reversed(episode)):
                 g = self.gamma * g + reward
-                #
-                # # TODO: debug
-                # if state[2] == 0:
-                #     print(f"State: {state}, Action: {action}, Reward: {reward}, G: {g}")
 
                 # If the S_t, A_t pair has been seen before, continue.
                 if self._is_subelement_present((state, action), episode[:len(episode) - t - 1]):

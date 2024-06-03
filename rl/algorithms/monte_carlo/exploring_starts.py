@@ -35,7 +35,7 @@ class MCExploringStartsAgent(MonteCarloAgent):
 
     def _init_policy(self, state_shape):
         """
-        Use the target_policy initialisation from Sutton and Barto, pp. 93:
+        Use the policy initialisation from Sutton and Barto, pp. 93:
         - If player sum == 20 or 21, stick (0)
         - Otherwise, hit (1)
         """
@@ -50,7 +50,7 @@ class MCExploringStartsAgent(MonteCarloAgent):
 
         super().reset()
 
-        # Initialise q-values, target_policy, and returns
+        # Initialise q-values, policy, and returns
         self._init_policy(self.state_shape)
 
     def act(self, state):
@@ -85,7 +85,7 @@ class MCExploringStartsAgent(MonteCarloAgent):
                 new_value = self.q_values.get(state, action) + step_size * mc_error
                 self.q_values.update(state, action, new_value)
 
-                # Update the target_policy
+                # Update the policy
                 self.policy.update(state, self.q_values)
 
             # Log the episode
