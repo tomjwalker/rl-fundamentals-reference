@@ -1,125 +1,85 @@
 """
 TODO:
     - Figure out strange target_policy plots
+    - Look into this: https://trevormcguire.medium.com/blackjack-stocks-and-reinforcement-learning-ea4014115aeb
 """
 
 
 from rl.algorithms.monte_carlo.viz import plot_results
-from rl.utils.general import argmax
+from rl.algorithms.common.mc_agent import MonteCarloAgent
+from rl.common.policy import EpsilonGreedyPolicy
+from rl.common.policy import EpsilonGreedyPolicyMC
+import numpy as np
 
 import gymnasium as gym
-import numpy as np
+
+from typing import Union
+from gymnasium import Env
+from rl.common.results_logger import ResultsLogger
 
 import matplotlib
 matplotlib.use('TkAgg')
 
 
-# TODO: refactor (as ES)
-def _is_subelement_present(subelement, my_list):
-    """
-    Helps check if a subelement is present in a list of tuples. Used to check if state has already been seen.
+class MCOnPolicy(MonteCarloAgent):
 
-    Simple example:
-    _is_subelement_present((1, 2), [(1, 2, 3), (4, 5, 6)])
-        True
-    """
-    for tpl in my_list:
-        if subelement == tpl[:len(subelement)]:
-            return True
-    return False
-
-
-class MCOnPolicy:
-
-    def __init__(self, env, epsilon=0.1, gamma=1.0):
-        self.env = env
-        self.epsilon = epsilon
-        self.gamma = gamma
+    def __init__(
+            self,
+            env: Union[Env, object],
+            gamma: float,
+            epsilon: float = None,
+            logger: ResultsLogger = None,
+            random_seed: int = None,
+    ):
+        super().__init__(env, gamma, epsilon, logger, random_seed)
 
         self.name = "MC On-Policy"    # For plotting
 
-        self.q_values = None
         self.policy = None
-        self.returns = None
         self.reset()
 
     def reset(self):
-        # Get env shape
-        state_shape = ()
-        for space in self.env.observation_space:
-            state_shape += (space.n,)
 
-        # Initialise q-values, target_policy, and returns
-        state_and_action_shape = state_shape + (self.env.action_space.n,)
-        self.q_values = np.zeros(state_and_action_shape)
-        self.policy = np.zeros(state_and_action_shape)
-        # Returns is a tensor same shape as q-values, but with each element being a list of returns
-        self.returns = np.empty(state_and_action_shape, dtype=object)
-        for index in np.ndindex(state_and_action_shape):
-            self.returns[index] = []
+        super().reset()
+
+        # Policy method specific to On-Policy and Off-Policy MC (not ES)
+        self.policy = EpsilonGreedyPolicy(self.epsilon, self.env.action_space.n)
 
     def act(self, state):
-        """
-        Epsilon-greedy target_policy already coded in the target_policy, which stores the probabilities of each action
-        for each state.
-        Just need to sample from the target_policy.
-        """
-        # TODO: is this epsilon-greedy?
-        # If the target_policy is all 0s, then return a random action
-        if np.all(self.policy[state][:] == 0):
-            return np.random.randint(0, self.env.action_space.n)
-        else:
-            return np.random.choice(self.env.action_space.n, p=self.policy[state][:])
+        return self.policy.select_action(state, self.q_values)
 
-    def _generate_episode(self):
+    def learn(self, num_episodes=10000):
 
-        episode = []
-        state, info = self.env.reset()
-        done = False
-        while not done:
-            action = self.act(state)
-            next_state, reward, terminated, truncated, _ = self.env.step(action)
-            episode.append((state, action, reward))
-            state = next_state
-            done = terminated or truncated
-        return episode
+        for episode_idx in range(num_episodes):
+            if episode_idx % 1000 == 0:
+                print(f"Episode {episode_idx}/{num_episodes}")
 
-    def _update_q_and_pi(self, episode):
-        """Update q-values using first-visit MC"""
-        returns = 0
-        for state, action, reward in reversed(episode):
-            returns = self.gamma * returns + reward
-            if not _is_subelement_present((state, action), episode[:-1]):
-                self.returns[state][action].append(returns)
-                self.q_values[state][action] = np.mean(self.returns[state][action])
-                self._update_policy(state)
+            # Generate an episode
+            episode = self._generate_episode(exploring_starts=False)
 
-    def _update_policy(self, state):
-        """
-        Update the target_policy using the q-values.
-        Where there are ties, break them randomly.
-        π(a|s) is:
-            - probability 1 - epsilon - epsilon / |A(s)| for the action with the highest q-value
-            - epsilon /  |A(s)| for all other actions
-        """
+            # Loop through the episode in reverse order, updating the q-values and policy
+            g = 0
+            for t, (state, action, reward) in enumerate(reversed(episode)):
+                g = self.gamma * g + reward
+                #
+                # # TODO: debug
+                # if state[2] == 0:
+                #     print(f"State: {state}, Action: {action}, Reward: {reward}, G: {g}")
 
-        best_action = argmax(self.q_values[state][:])
-        # Update the target_policy
-        # TODO: this is A (for any s); make it A(s)
-        self.policy[state][:] = self.epsilon / self.env.action_space.n
-        self.policy[state][best_action] = 1 - self.epsilon + self.epsilon / self.env.action_space.n
+                # If the S_t, A_t pair has been seen before, continue.
+                if self._is_subelement_present((state, action), episode[:len(episode) - t - 1]):
+                    continue
 
-        # Assert that the target_policy sums to 1 for each state
-        assert np.isclose(np.sum(self.policy[state][:]), 1.0), \
-            f"Policy does not sum to 1 for state {state}. Sum is {np.sum(self.policy[state][:])}"
+                # Update the q-value for this state-action pair
+                # NewEstimate <- OldEstimate + 1/N(St, At) * (Return - OldEstimate)
+                mc_error = g - self.q_values.get(state, action)
+                self.state_action_counts.update(state, action)    # Get N(St, At)
+                step_size = 1 / self.state_action_counts.get(state, action)
+                new_value = self.q_values.get(state, action) + step_size * mc_error
+                self.q_values.update(state, action, new_value)
 
-    def train(self, num_episodes=10000):
-
-        for episode in range(num_episodes):
-            if episode % 1000 == 0:
-                print(f"Episode {episode}/{num_episodes}")
-            episode = self._generate_episode()
-            self._update_q_and_pi(episode)
+        # Log the episode
+        self.logger.log_episode()
 
 
 def run():
@@ -129,8 +89,8 @@ def run():
 
     # Create the environment
     env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto
-    mc_control = MCOnPolicy(env)
-    mc_control.train(num_episodes=train_episodes)
+    mc_control = MCOnPolicy(env, epsilon=0.1, gamma=1.0)
+    mc_control.learn(num_episodes=train_episodes)
 
     # Plot the results
     plot_results(mc_control)

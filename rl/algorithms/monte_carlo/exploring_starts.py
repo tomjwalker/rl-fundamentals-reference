@@ -16,21 +16,6 @@ from gymnasium import Env
 import matplotlib.pyplot as plt
 
 
-# TODO refactor: move to utils.general
-def _is_subelement_present(subelement, my_list):
-    """
-    Helps check if a subelement is present in a list of tuples. Used to check if state has already been seen.
-
-    Simple example:
-    _is_subelement_present((1, 2), [(1, 2, 3), (4, 5, 6)])
-        True
-    """
-    for tpl in my_list:
-        if subelement == tpl[:len(subelement)]:
-            return True
-    return False
-
-
 class MCExploringStartsAgent(MonteCarloAgent):
 
     def __init__(
@@ -45,10 +30,7 @@ class MCExploringStartsAgent(MonteCarloAgent):
 
         # Initialise Monte Carlo-specific attributes
         self.name = "MC Exploring Starts"  # For plotting
-
         self.policy = None
-        self.returns = None
-
         self.reset()
 
     def _init_policy(self, state_shape):
@@ -81,7 +63,7 @@ class MCExploringStartsAgent(MonteCarloAgent):
 
             # Print progress
             if episode_idx % 1000 == 0:
-                print(f"Episode {episode_idx}")
+                print(f"Episode {episode_idx}/{num_episodes}")
 
             # Generate an episode
             episode = self._generate_episode(exploring_starts=True)
@@ -92,7 +74,7 @@ class MCExploringStartsAgent(MonteCarloAgent):
                 g = self.gamma * g + reward
 
                 # If the S_t, A_t pair has been seen before, continue.
-                if _is_subelement_present((state, action), episode[:len(episode) - t - 1]):
+                if self._is_subelement_present((state, action), episode[:len(episode) - t - 1]):
                     continue
 
                 # Update the q-value for this state-action pair
@@ -110,14 +92,14 @@ class MCExploringStartsAgent(MonteCarloAgent):
             self.logger.log_episode()
 
 
-def smooth(x, window=1000):
+def smooth(x, window=100):
     return np.convolve(x, np.ones(window), 'valid') / window
 
 
 def run():
 
     # Run parameters
-    train_episodes = 100000
+    train_episodes = 50000
 
     # Instantiate and learn the agent
     env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto

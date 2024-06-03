@@ -47,6 +47,21 @@ class MonteCarloAgent(BaseAgent):
 
         self.reset()
 
+    @staticmethod
+    def _is_subelement_present(subelement, my_list):
+        """
+        Helps check if a subelement is present in a list of tuples.
+        Used to check if state has already been seen in first-visit MC algorithms.
+
+        Simple example:
+        _is_subelement_present((1, 2), [(1, 2, 3), (4, 5, 6)])
+            True
+        """
+        for tpl in my_list:
+            if subelement == tpl[:len(subelement)]:
+                return True
+        return False
+
     def _generate_episode(self, exploring_starts=True):
 
         episode = []
