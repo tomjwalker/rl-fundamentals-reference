@@ -41,3 +41,23 @@ class EpsilonGreedyPolicy(BasePolicy):
         best_action = q_values.get_max_action(state)
         probs[best_action] = 1 - self.epsilon + self.epsilon / self.action_space
         return probs
+
+
+# TODO: temp
+class EpsilonGreedyPolicyMC:
+    def __init__(self, epsilon: float, initial_policy: np.ndarray) -> None:
+
+        self.epsilon = epsilon
+        self.value = initial_policy
+
+    def select_action(self, state: Tuple[int, ...]) -> int:
+        """policy.value stores probabilities of actions"""
+        return np.random.choice(self.value.shape[-1], p=self.value[state])
+
+    def update(self, state: Tuple[int, ...], q_values: QValueTable) -> None:
+        best_action = q_values.get_max_action(state)
+        for action in range(self.value.shape[-1]):
+            if action == best_action:
+                self.value[state][action] = 1 - self.epsilon + self.epsilon / self.value.shape[-1]
+            else:
+                self.value[state][action] = self.epsilon / self.value.shape[-1]
