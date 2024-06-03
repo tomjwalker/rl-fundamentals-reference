@@ -85,11 +85,11 @@ class MCOnPolicy(MonteCarloAgent):
 def run():
 
     # Run parameters
-    train_episodes = 100000
+    train_episodes = 50000
 
     # Create the environment
     env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto
-    mc_control = MCOnPolicy(env, epsilon=0.2, gamma=1.0)
+    mc_control = MCOnPolicy(env, epsilon=0.1, gamma=1.0)
     mc_control.learn(num_episodes=train_episodes)
 
     # Plot the results

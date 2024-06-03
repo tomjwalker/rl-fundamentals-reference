@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 import matplotlib
+from matplotlib.colors import ListedColormap
 
 matplotlib.use('TkAgg')
 
@@ -69,7 +70,10 @@ def _generate_3d_value_ax(mc_control, usable_ace=True, fig=None, subplot=111):
     dealer_count = np.arange(DEALER_MIN, DEALER_MAX+1)
     x, y = np.meshgrid(player_count, dealer_count)
 
-    _ = ax.plot_surface(x, y, values, cmap="viridis")
+    # Create the seaborn colormap
+    cmap = sns.color_palette("vlag", as_cmap=True)
+
+    _ = ax.plot_surface(x, y, values, cmap=cmap)
 
     ax.set_title(title)
     ax.set_xlabel("Dealer showing")
@@ -95,11 +99,20 @@ def _generate_policy_ax(mc_agent, usable_ace=True, fig=None, subplot=111):
     policy.index = np.arange(PLAYER_MIN_POLICY, PLAYER_MAX+1)
     policy.columns = np.arange(DEALER_MIN, DEALER_MAX+1)
 
-    sns.heatmap(policy, cmap="viridis", annot=False, fmt="d", ax=ax)
+    # Create a categorical colormap using 'tab10'
+    cmap = ListedColormap(plt.get_cmap('tab10').colors[:2])
+
+    # Create the heatmap with the categorical colormap
+    sns.heatmap(policy, cmap=cmap, annot=False, fmt="d", ax=ax, cbar=False)
     ax.invert_yaxis()
     ax.set_title(title)
     ax.set_xlabel("Dealer showing")
     ax.set_ylabel("Player sum")
+
+    # Create a custom legend
+    handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=cmap(0), markersize=10, label='Stick'),
+               plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=cmap(1), markersize=10, label='Hit')]
+    ax.legend(handles=handles, title='Action', bbox_to_anchor=(1.05, 1), loc='upper left')
 
     return fig, ax
 
@@ -112,8 +125,12 @@ def plot_results(mc_control):
     fig, ax_0 = _generate_3d_value_ax(mc_control, usable_ace=True, fig=fig, subplot=221)
     fig, ax_1 = _generate_3d_value_ax(mc_control, usable_ace=False, fig=fig, subplot=222)
     fig, ax_2 = _generate_policy_ax(mc_control, usable_ace=True, fig=fig, subplot=223)
-    _, _ = _generate_policy_ax(mc_control, usable_ace=False, fig=fig, subplot=224)
+    fig, ax_3 = _generate_policy_ax(mc_control, usable_ace=False, fig=fig, subplot=224)
     fig.suptitle(mc_control.name)
 
     plt.tight_layout()
     plt.show()
+
+# Example usage:
+# Assuming `mc_control` is defined and PLAYER_MIN_VALUE, PLAYER_MAX, DEALER_MIN, DEALER_MAX are set appropriately
+# plot_results(mc_control)
