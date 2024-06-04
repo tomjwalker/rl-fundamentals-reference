@@ -38,7 +38,7 @@ def plot_policy(policy, figure=None):
 
 
 def plot_policy_and_value(policy, value):
-    figure = plt.figure(figsize=(20, 10))
+    figure = plt.figure(figsize=(15, 7.5))
 
     figure, ax1 = plot_policy(policy, figure)
     figure, ax2 = plot_value_function_3d(value, figure)

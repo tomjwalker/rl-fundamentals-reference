@@ -1,3 +1,6 @@
+# TODO: read then remove this: https://alexkozlov.com/post/jack-car-rental/
+
+
 import numpy as np
 from rl.environment.dynamic_programming.jacks_car_rental import JacksCarRental
 from rl.utils.general import set_filepath
@@ -69,7 +72,6 @@ class PolicyIteration:
                     # delta <- max(delta, |v - V(s)|)
                     delta = max(delta, np.abs(old_value - self.value[state_1, state_2]))
 
-            print(f"Policy evaluation: loop {loop_idx}, delta = {delta}")
             loop_idx += 1
 
             # If delta < self.theta, then the value function has converged, and policy evaluation can stop (break loop)
@@ -77,25 +79,55 @@ class PolicyIteration:
                 break
 
     def policy_improvement(self):
+
+        # policy_stable <- True
         policy_stable = True
+
         available_actions = np.arange(-self.env.max_move_cars, self.env.max_move_cars + 1)
         expected_value_matrix = self.env.get_expected_value(self.value, self.gamma)
+
+        # For each s in S
         for state_1 in range(self.max_cars + 1):
             for state_2 in range(self.max_cars + 1):
+
+                # old_action <- pi(s)
                 old_action = self.policy[state_1, state_2]
+
+                # ======================================================================================================
+                # pi(s) <- argmax_a sum_{s', r} p(s', r|s, a) [r + gamma V(s')]
+                # ======================================================================================================
+
+                # Initialise action_returns for all possible actions as [-inf, -inf, ..., -inf]
+                # Each element in action_returns corresponds to an action in available_actions (running from
+                # [-max_move_cars, max_move_cars] (inclusive))
+                # This will make the argmax calculation easier (list elements will be replaced by expected rewards for
+                # each action)
                 action_returns = [-np.inf] * len(available_actions)
+
+                # For each action in A(s)...
                 for action_idx, action in enumerate(available_actions):
+
+                    # Calculate s'. Same as in policy_evaluation
                     state_1_next_day = state_1 - action
                     state_2_next_day = state_2 + action
-                    # If these new states fall outside the range of possible states, then continue
+
+                    # If these new states fall outside the range of possible states, then continue to the next iteration
+                    # (don't update the policy for this (state, action) pair)
                     if state_1_next_day < 0 or state_1_next_day > self.max_cars or \
                             state_2_next_day < 0 or state_2_next_day > self.max_cars:
                         continue
 
-                    expected_reward = expected_value_matrix[state_1_next_day, state_2_next_day] - self.env.move_cost * \
+                    # sum_{s', r} p(s', r|s, a) [r + gamma V(s')] for this specific action
+                    expected_return = expected_value_matrix[state_1_next_day, state_2_next_day] - self.env.move_cost * \
                         np.abs(action)
-                    action_returns[action_idx] = expected_reward
+
+                    # Update action_returns list with expected return for this action
+                    action_returns[action_idx] = expected_return
+
+                # Once all actions have been evaluated, update policy with action that maximises expected return
                 self.policy[state_1, state_2] = available_actions[np.argmax(action_returns)]
+
+                # If old_action != pi(s), then policy_stable <- False
                 if old_action != self.policy[state_1, state_2]:
                     policy_stable = False
         return policy_stable
@@ -103,12 +135,15 @@ class PolicyIteration:
     def policy_iteration(self):
         loop = 0
         while True:
+
             print(f"Policy evaluation: loop {loop}")
             self.policy_evaluation()
             self.save_artefacts(save_name=f"policy_evaluation_{loop}")
+
             print(f"Policy improvement: loop {loop}")
             policy_stable = self.policy_improvement()
             self.save_artefacts(save_name=f"policy_improvement_{loop}")
+
             if policy_stable:
                 break
             loop += 1
