@@ -1,6 +1,8 @@
 import numpy as np
 from rl.environment.dynamic_programming.jacks_car_rental import JacksCarRental
 from rl.utils.general import set_filepath
+import os
+from rl.algorithms.dynamic_programming.viz import plot_policy_and_value
 
 
 class PolicyIteration:
@@ -15,8 +17,13 @@ class PolicyIteration:
         self.value = np.zeros((self.max_cars + 1, self.max_cars + 1), dtype=np.float32)
 
     def save_artefacts(self, save_name):
-        policy_dir = ".data/dynamic_programming/policy_iteration/policy"
-        value_dir = ".data/dynamic_programming/policy_iteration/value"
+        policy_dir = "./.data/dynamic_programming/policy_iteration/policy"
+        value_dir = "./.data/dynamic_programming/policy_iteration/value"
+
+        # Ensure directories exist
+        os.makedirs(policy_dir, exist_ok=True)
+        os.makedirs(value_dir, exist_ok=True)
+
         policy_filepath = policy_dir + "/" + save_name + ".npy"
         value_filepath = value_dir + "/" + save_name + ".npy"
         np.save(set_filepath(policy_filepath), self.policy)
@@ -25,29 +32,47 @@ class PolicyIteration:
     def policy_evaluation(self):
         while True:
             delta = 0
-            loop_idx = 0
+            loop_idx = 0    # For logging training progress
             expected_value_matrix = self.env.get_expected_value(self.value, self.gamma)
             for state_1 in range(self.max_cars + 1):
                 for state_2 in range(self.max_cars + 1):
+
+                    # v <- V(s)
                     old_value = self.value[state_1, state_2]
+
+                    # ==================================================================================================
+                    # V(s) <- sum_a pi(a|s) sum_{s', r} p(s', r|s, a) [r + gamma V(s')]
+                    # ==================================================================================================
+                    # a = pi(s) is the action to take (deterministic policy)
                     action = self.policy[state_1, state_2]
+
+                    # Calculate s'. Action a moves cars from location 1 to location 2, so:
+                    #    - s'_1 = s_1 - a
+                    #    - s'_2 = s_2 + a
                     state_1_next_day = state_1 - action
                     state_2_next_day = state_2 + action
-                    # If these new states fall outside the range of possible states, then continue
+
+                    # If these new states fall outside the range of possible states, then continue to the next iteration
+                    # (don't update the value function for this (state, action) pair)
                     if state_1_next_day < 0 or state_1_next_day > self.max_cars or \
                             state_2_next_day < 0 or state_2_next_day > self.max_cars:
                         continue
 
                     # TODO: roll this into env class? Somehow make cleaner for homework script
+                    # expected return = sum_{s', r} p(s', r|s, a) [r + gamma V(s')]
                     expected_return = expected_value_matrix[state_1_next_day, state_2_next_day] - self.env.move_cost * \
                         np.abs(action)
 
+                    # V(s) <- expected return
                     self.value[state_1, state_2] = expected_return
+
+                    # delta <- max(delta, |v - V(s)|)
                     delta = max(delta, np.abs(old_value - self.value[state_1, state_2]))
 
             print(f"Policy evaluation: loop {loop_idx}, delta = {delta}")
             loop_idx += 1
 
+            # If delta < self.theta, then the value function has converged, and policy evaluation can stop (break loop)
             if delta < self.theta:
                 break
 
@@ -94,16 +119,6 @@ if __name__ == "__main__":
     env = JacksCarRental()
     policy_iteration = PolicyIteration(env)
     policy, value = policy_iteration.policy_iteration()
-    print(policy)
-    print(value)
 
-    # Plot the policy: a heatmap of the policy. Use "seismic" colormap centered at 0 (white) to show +ve (red) and
-    # -ve (blue) actions
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    plt.figure(figsize=(10, 10))
-    sns.heatmap(policy, cmap="seismic", center=0, annot=True, fmt=".1f", cbar=False)
-    plt.title("Policy")
-    plt.xlabel("Location 2")
-    plt.ylabel("Location 1")
-    plt.show()
+    # Plot the policy and value
+    plot_policy_and_value(policy, value)

@@ -1,6 +1,7 @@
 import numpy as np
 from rl.environment.dynamic_programming.jacks_car_rental import JacksCarRental
 from rl.utils.general import set_filepath
+from rl.algorithms.dynamic_programming.viz import plot_policy_and_value
 
 
 class ValueIteration:
@@ -74,13 +75,5 @@ if __name__ == "__main__":
     print(policy)
     print(value)
 
-    # Plot the policy: a heatmap of the policy. Use "seismic" colormap centered at 0 (white) to show +ve (red) and
-    # -ve (blue) actions
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    plt.figure(figsize=(10, 10))
-    sns.heatmap(policy, cmap="seismic", center=0, annot=True, fmt=".1f", cbar=False)
-    plt.title("Policy")
-    plt.xlabel("Location 2")
-    plt.ylabel("Location 1")
-    plt.show()
+    # Plot the policy and value
+    plot_policy_and_value(policy, value)
