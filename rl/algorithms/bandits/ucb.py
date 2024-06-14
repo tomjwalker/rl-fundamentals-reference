@@ -1,5 +1,6 @@
-from agents.bandits.epsilon_greedy import EpsilonGreedy
+from rl.algorithms.bandits.epsilon_greedy import EpsilonGreedy
 from rl.environment.bandits.k_armed_bandit import KArmedTestbed
+from rl.utils.general import argmax_ties_random
 
 import numpy as np
 import matplotlib
@@ -31,7 +32,7 @@ class UpperConfidenceBound(EpsilonGreedy):
         # TODO: check this is correct (specifically, t)
         exploration_bonus = self.c * np.sqrt(np.log(np.sum(action_counts)) / action_counts)
         q_values = self.q_values + exploration_bonus
-        return self._argmax(q_values)
+        return argmax_ties_random(q_values)
 
 
 def main():
@@ -40,7 +41,7 @@ def main():
     np.random.seed(random_seed)
 
     # Initialise the k-armed bandits
-    num_runs = 100    # Final version: 2000
+    num_runs = 500    # Final version: 2000
     k = 10
     k_mean = 0
     k_std = 1
@@ -59,7 +60,7 @@ def main():
     }
 
     results = {k: [] for k in runs.keys()}
-    fig, ax = plt.subplots(1, 2, figsize=(20, 10))
+    fig, ax = plt.subplots(1, 2, figsize=(15, 7.5))
     for run_name, run in runs.items():
 
         print(f"Running {run_name}...")
