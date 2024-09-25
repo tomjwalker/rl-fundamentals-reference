@@ -100,6 +100,8 @@ def run():
 
     # Run parameters
     train_episodes = 50000
+    # Uncomment the next line, and run, if you want smoother plots similar to those in the lecture slides
+    # train_episodes = 500000
 
     # Instantiate and learn the agent
     env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto

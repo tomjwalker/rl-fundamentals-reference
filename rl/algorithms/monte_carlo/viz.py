@@ -68,7 +68,7 @@ def _generate_3d_value_ax(mc_control, usable_ace=True, fig=None, subplot=111):
 
     player_count = np.arange(PLAYER_MIN_VALUE, PLAYER_MAX+1)
     dealer_count = np.arange(DEALER_MIN, DEALER_MAX+1)
-    x, y = np.meshgrid(player_count, dealer_count)
+    x, y = np.meshgrid(dealer_count, player_count)
 
     # Create the seaborn colormap
     cmap = sns.color_palette("vlag", as_cmap=True)
