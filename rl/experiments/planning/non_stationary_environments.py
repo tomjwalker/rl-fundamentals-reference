@@ -36,7 +36,7 @@ def run():
         },
     }
 
-    environment_name = "ShortcutMaze"
+    environment_name = "BlockingMaze"
 
     dyna_kwargs = {
         "gamma": 0.95,
@@ -80,7 +80,7 @@ def run():
         trial.plot(
             series_type="cumulative_rewards",
             color=row["colour"],
-            show_std=True,
+            show_std=False,
             std_alpha=0.1,
             ax=ax,
         )
