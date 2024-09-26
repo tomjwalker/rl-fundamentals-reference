@@ -13,7 +13,8 @@ following:
         - render(): renders the environment
 """
 import numpy as np
-from gymnasium.spaces import Discrete, Box
+from gymnasium.spaces import Discrete
+# from gymnasium.spaces import Box
 
 import matplotlib
 from matplotlib import pyplot as plt
@@ -272,14 +273,11 @@ def main():
     #     env.render()
     #
 
-    # Deterministic path from S to F (including a couple of tries to run into the wall)
-    actions = [2, 1, 1, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0]
-    for action in actions:
-
+    # Render the environment after the layout changes
+    for _ in range(1001):
+        action = env.action_space.sample()
         next_state, reward, terminated, truncated, _ = env.step(action)
-
-        # Render the environment
-        env.render()
+    env.render()
 
 
 if __name__ == "__main__":

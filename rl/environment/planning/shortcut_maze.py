@@ -69,3 +69,16 @@ class ShortcutMaze(BlockingMaze):
                 ],
                 dtype=object
             )
+
+
+if __name__ == "__main__":
+
+    env = ShortcutMaze()
+
+    # Render initial layout
+    env.render()
+
+    # Render layout after 3000 steps
+    for _ in range(3001):
+        env.step(env.action_space.sample())
+    env.render()
