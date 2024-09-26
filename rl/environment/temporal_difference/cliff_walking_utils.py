@@ -1,7 +1,8 @@
 import matplotlib
 from matplotlib import pyplot as plt
 from rl.algorithms.common.td_agent import TemporalDifferenceAgent
-from rl.common.results_logger import ResultsLogger
+# from rl.common.results_logger import ResultsLogger
+import numpy as np
 from typing import Tuple
 matplotlib.use('TkAgg')
 
@@ -49,6 +50,49 @@ def visualise_q(agent: TemporalDifferenceAgent, grid_shape: Tuple[int, int] = (4
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_title(f"Q-values for {agent.name} agent")
+
+    # Show plot if no axis is provided
+    if ax is None:
+        plt.show()
+
+
+def visualise_state_visits(state_visits: np.ndarray, grid_shape: Tuple[int, int] = (4, 12),
+                           ax: plt.Axes = None) -> None:
+    """
+    Visualises the state visitation count for the cliff-walking environment.
+
+    :param state_visits: 1D array of state visitation counts
+    :param grid_shape: Shape of the cliff-walking grid
+    :param ax: Matplotlib axes to plot on. If None, a new figure is created.
+    """
+    # Reshape visits to grid_shape
+    visits_grid = state_visits.reshape(grid_shape)
+
+    # Create figure if not provided
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 5))
+
+    # Plot visitation counts
+    im = ax.imshow(visits_grid, cmap='viridis')
+
+    # Add colorbar
+    plt.colorbar(im, ax=ax, label='Visit count')
+
+    # Add visit counts as text in each cell
+    for i in range(grid_shape[0]):
+        for j in range(grid_shape[1]):
+            ax.text(j, i, str(visits_grid[i, j]),
+                    ha='center', va='center', color='w', fontweight='bold')
+
+    # Mask terminal states (cliff and goal) - cover cell with grey
+    mask_terminal = visits_grid == 0
+    cmap_mask = plt.cm.colors.ListedColormap(["none", "gray"])
+    ax.imshow(mask_terminal, cmap=cmap_mask)
+
+    # Set up plot
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title("State visitation count")
 
     # Show plot if no axis is provided
     if ax is None:

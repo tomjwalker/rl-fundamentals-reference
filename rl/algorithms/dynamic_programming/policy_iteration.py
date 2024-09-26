@@ -93,6 +93,7 @@ class PolicyIteration:
                         continue
 
                     # expected return = sum_{s', r} p(s', r|s, a) [r + gamma V(s')]
+                    # Use helper function _get_expected_return for this calculation
                     expected_return = self._get_expected_return(state_1_morning, state_2_morning, action)
 
                     # V(s) <- expected return
@@ -147,6 +148,7 @@ class PolicyIteration:
                         continue
 
                     # sum_{s', r} p(s', r|s, a) [r + gamma V(s')] for this specific action
+                    # Use helper function _get_expected_return for this calculation
                     expected_return = self._get_expected_return(state_1_morning, state_2_morning, action)
 
                     # Update action_returns list with expected return for this action

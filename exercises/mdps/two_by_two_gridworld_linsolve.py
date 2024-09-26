@@ -1,3 +1,7 @@
+# TODO: clean up
+# TODO: change slightly
+
+
 import matplotlib
 import matplotlib.pyplot as plt
 

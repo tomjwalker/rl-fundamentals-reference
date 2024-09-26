@@ -105,7 +105,7 @@ ax[0].axhline(y=exact_area, color="black", linestyle="--")
 # Display final estimate (to 3sf) alongside the exact value in the axis title
 ax[0].set_title(f"Estimated Area: {area_estimate:.3f} (Exact: {exact_area:.3f})")
 
-colors = ["green" if inside else "red" for (point, inside) in log]
+colors = ["#22a884" if inside else "#c6c6c6" for (point, inside) in log]
 ax[1].scatter([point[0] for (point, inside) in log], [point[1] for (point, inside) in log], color=colors, alpha=0.5)
 
 # Make axis 1 axes equal
