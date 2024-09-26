@@ -90,6 +90,7 @@ class ValueIteration:
                             continue
 
                         # expected return = sum_{s', r} p(s', r|s, a) [r + gamma V(s')]
+                        # Use helper function _get_expected_return for this calculation
                         expected_return = self._get_expected_return(state_1_morning, state_2_morning, action)
 
                         # Want max value (max_a(expected_return) for this state)
