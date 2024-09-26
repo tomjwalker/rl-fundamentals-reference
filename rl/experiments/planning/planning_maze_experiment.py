@@ -1,3 +1,6 @@
+# TODO: plot of policies half way through second episode
+
+
 from rl.environment.planning.planning_maze import Maze
 import pandas as pd
 
