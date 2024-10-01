@@ -1,8 +1,7 @@
-import math
+
 import numpy as np
 from scipy.stats import poisson
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 
 
@@ -158,6 +157,16 @@ class JacksCarRental:
         expected_next_value = gamma * (trans_prob_1.T.dot(value).dot(trans_prob_2))
         expected_value_matrix = expected_reward + expected_next_value
         return expected_value_matrix
+
+    def compute_next_state(self, state, action):
+        state_1, state_2 = state
+        state_1_morning = state_1 - action
+        state_2_morning = state_2 + action
+
+        if 0 <= state_1_morning <= self.max_cars and 0 <= state_2_morning <= self.max_cars:
+            return (state_1_morning, state_2_morning)
+        else:
+            return None
 
 
 def main():
