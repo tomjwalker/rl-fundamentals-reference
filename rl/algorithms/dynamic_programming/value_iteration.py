@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Tuple
 from rl.environment.dynamic_programming.jacks_car_rental import JacksCarRental
 from rl.utils.general import set_filepath
 import os
@@ -6,17 +7,35 @@ from rl.algorithms.dynamic_programming.viz import plot_policy_and_value
 
 
 class ValueIteration:
-    def __init__(self, env, gamma=0.9, theta=1e-8):
+    def __init__(self, env: JacksCarRental, gamma: float = 0.9, theta: float = 1e-8) -> None:
+        """
+        Initialise the ValueIteration algorithm with the given environment.
+
+        Args:
+            env (JacksCarRental): The environment to solve.
+            gamma (float): The discount factor.
+            theta (float): A small threshold for determining convergence.
+        """
         self.env = env
         self.gamma = gamma
         self.theta = theta
 
         # TODO: might need to return to this if env refactored following Gymnasium API
-        self.max_cars = env.max_cars
-        self.policy = np.zeros((self.max_cars + 1, self.max_cars + 1), dtype=np.int8)  # int8 fits action range
-        self.value = np.zeros((self.max_cars + 1, self.max_cars + 1), dtype=np.float32)
+        self.max_cars: int = env.max_cars
+        self.policy: np.ndarray = np.zeros(
+            (self.max_cars + 1, self.max_cars + 1), dtype=np.int8
+        )  # int8 fits action range
+        self.value: np.ndarray = np.zeros(
+            (self.max_cars + 1, self.max_cars + 1), dtype=np.float32
+        )
 
-    def save_artefacts(self, save_name):
+    def save_artefacts(self, save_name: str) -> None:
+        """
+        Save the current policy and value function to disk.
+
+        Args:
+            save_name (str): The name to use when saving the policy and value arrays.
+        """
         policy_dir = "./.data/dynamic_programming/policy_iteration/policy"
         value_dir = "./.data/dynamic_programming/policy_iteration/value"
 
@@ -29,32 +48,48 @@ class ValueIteration:
         np.save(set_filepath(policy_filepath), self.policy)
         np.save(set_filepath(value_filepath), self.value)
 
-    def _update_expected_return_array(self):
+    def _update_expected_return_array(self) -> None:
         """
         Helper function for calculating expected returns efficiently.
 
-        This updates the `gamma P^{(1)T} V(s') P^{(2)}` matrix, for all states s' in S.
+        This updates the `gamma P^{(1)T} V(s') P^{(2)}` matrix for all states s' in S.
 
         See lecture notes for further details.
         """
         self.expected_value_matrix = self.env.get_expected_value(self.value, self.gamma)
 
-    def _get_expected_return(self, state_1_next_morning, state_2_next_morning, action):
+    def _get_expected_return(
+        self, state_1_next_morning: int, state_2_next_morning: int, action: int
+    ) -> float:
         """
         Calculates the expected return for a given state and action efficiently, using stored matrices.
 
         This evaluates:
 
-            sum_{r,s'} p(s', r | s, a) (r + gamma v(s')) =
-                EXPECTED_VALUE_MATRIX(s_1^dagger, s_2^dagger) + R_a |a|
+            sum_{r,s'} p(s', r | s, a) [r + gamma v(s')] =
+                EXPECTED_VALUE_MATRIX(s_1^dagger, s_2^dagger) - R_a * |a|
+
+        Args:
+            state_1_next_morning (int): Number of cars at location 1 the next morning.
+            state_2_next_morning (int): Number of cars at location 2 the next morning.
+            action (int): The action taken (number of cars moved from location 1 to 2).
+
+        Returns:
+            float: The expected return for the given state and action.
         """
-        return self.expected_value_matrix[state_1_next_morning, state_2_next_morning] - self.env.move_cost * \
-            np.abs(action)
+        return (
+            self.expected_value_matrix[state_1_next_morning, state_2_next_morning]
+            - self.env.move_cost * np.abs(action)
+        )
 
-    def value_iteration(self):
+    def value_iteration(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Run the value iteration algorithm.
 
-        # TODO: temp
-        loop_idx = 0
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: The optimal policy and value function.
+        """
+        loop_idx: int = 0
 
         # Lecture algorithm pseudo-code: "repeat:"
         while True:
@@ -97,7 +132,9 @@ class ValueIteration:
 
                         # expected return = sum_{s', r} p(s', r|s, a) [r + gamma V(s')]
                         # Use helper function _get_expected_return for this calculation
-                        expected_return: float = self._get_expected_return(next_state_1, next_state_2, action)
+                        expected_return: float = self._get_expected_return(
+                            next_state_1, next_state_2, action
+                        )
 
                         # Want max value (max_a(expected_return) for this state)
                         # Also want to store the action that led to this max value
