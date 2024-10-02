@@ -5,19 +5,18 @@ import re
 
 
 def process_code_line(line):
-    stripped_line = line.strip()
-    # Check for assignment using regex
-    assignment_match = re.match(r'^(\s*)([\w,\s]+)\s*=\s*(.*)', line)
+    stripped_line = line.rstrip('\n')
+    # Adjusted regex to handle optional type annotations
+    assignment_match = re.match(r'^(\s*)([\w,\s]+)(\s*:\s*[\w\[\],\s]+)?\s*=\s*(.*)', stripped_line)
     if assignment_match:
         indent = assignment_match.group(1)
         lhs = assignment_match.group(2)
-        # Retain indentation and left-hand side, replace right-hand side
-        return f"{indent}{lhs} = None  # TODO: Implement this assignment\n"
+        type_annotation = assignment_match.group(3) or ''
+        # Retain indentation, LHS, and type annotation
+        return f"{indent}{lhs}{type_annotation} = None  # TODO: Implement this assignment\n"
     else:
         # Handle non-assignment lines
-        indent_match = re.match(r'^(\s*)', line)
-        indent = indent_match.group(1) if indent_match else ''
-        # Replace with placeholder
+        indent = re.match(r'^(\s*)', stripped_line).group(1)
         return f"{indent}# TODO: Implement this line\n"
 
 
@@ -35,7 +34,7 @@ def process_file(input_path, output_path):
             i += 1
             continue  # Skip personal TODO comments
 
-        elif stripped_line.startswith("# HOMEWORK:") or stripped_line.startswith("# HOMEWORK BEGINS:"):
+        elif any(stripped_line.startswith(tag) for tag in ["# HOMEWORK:", "# HOMEWORK BEGINS:", "# HOMEWORK START:"]):
             # Retain all consecutive comment lines
             while i < len(lines) and lines[i].strip().startswith("#"):
                 processed_lines.append(lines[i])
@@ -51,14 +50,15 @@ def process_file(input_path, output_path):
             else:
                 # Handle multi-line homework block
                 # Determine indentation level
-                indent_match = re.match(r'^(\s*)', lines[i] if i < len(lines) else '')
+                next_line = lines[i] if i < len(lines) else ''
+                indent_match = re.match(r'^(\s*)', next_line)
                 indent = indent_match.group(1) if indent_match else ''
                 # Add placeholder
                 processed_lines.append(f"{indent}pass  # TODO: Implement this section\n")
-                # Skip lines until '# HOMEWORK ENDS' is found
-                while i < len(lines) and not lines[i].strip().startswith("# HOMEWORK ENDS"):
+                # Skip lines until end of homework block
+                while i < len(lines) and not any(lines[i].strip().startswith(tag) for tag in ["# HOMEWORK ENDS", "# HOMEWORK END"]):
                     i += 1
-                # Retain the '# HOMEWORK ENDS' comment
+                # Retain the end marker
                 if i < len(lines):
                     processed_lines.append(lines[i])
                     i += 1
@@ -114,7 +114,7 @@ def main():
     with open(os.path.join(args.output_dir, 'README.md'), 'w') as f:
         f.write("# RL Course Exercises\n\n")
         f.write(
-            "Welcome to the RL course exercises. Please refer to individual exercise directories for specific instructions.\n")    # NoQA
+            "Welcome to the RL course exercises. Please refer to individual exercise directories for specific instructions.\n")
 
     print("Processing complete. Student repo created successfully.")
 
