@@ -50,7 +50,6 @@ class EpsilonGreedy:
         """
         Reset the agent by re-initialising the action-value estimates and action counts.
         """
-        # Initialise the q-values
         if self.initialisation == 0:
             self.q_values = np.zeros(self.num_actions)
         elif self.initialisation > 0:
@@ -58,7 +57,6 @@ class EpsilonGreedy:
         else:
             raise ValueError(f"Unrecognised initialisation: {self.initialisation}")
 
-        # Initialise the action counts (N)
         self.action_counts = np.zeros(self.num_actions)
 
     def act(self) -> int:
@@ -68,9 +66,16 @@ class EpsilonGreedy:
         Returns:
             int: The action selected.
         """
+
         if np.random.random() < self.epsilon:
-            return np.random.randint(0, self.num_actions)
+            # HOMEWORK: explore by selecting a random action
+            # (use np.random.randint, with the number of actions as the upper bound)
+            exploratory_action = np.random.randint(0, self.num_actions)
+            return exploratory_action
+
         else:
+            # HOMEWORK: exploit by selecting the action with the highest estimated value
+            # (use argmax_ties_random to break ties randomly)
             return argmax_ties_random(self.q_values)
 
     def simple_update(self, action: int, reward: float) -> None:
@@ -81,7 +86,10 @@ class EpsilonGreedy:
             action (int): The action taken.
             reward (float): The reward received.
         """
+        # HOMEWORK: Increment N(A) for the selected action (c.f. self.action_counts).
         self.action_counts[action] += 1
+
+        # HOMEWORK: Update self.q_values[action] using the incremental formula for sample averages.
         self.q_values[action] += (1 / self.action_counts[action]) * (reward - self.q_values[action])
 
     def weighted_update(self, action: int, reward: float) -> None:
@@ -92,6 +100,8 @@ class EpsilonGreedy:
             action (int): The action taken.
             reward (float): The reward received.
         """
+        # HOMEWORK:
+        # Update self.q_values[action] using the weighted average formula with step size alpha.
         self.q_values[action] += self.alpha * (reward - self.q_values[action])
 
     def train(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -194,7 +204,7 @@ def initial_val_experiment(
     np.random.seed(random_seed)
 
     # Initialise the k-armed bandits
-    num_runs = 5  # Adjust as needed (e.g., 2000 for the final version)
+    num_runs = 200  # Adjust as needed (e.g., 2000 for the final version)
     k = 10
     k_mean = 0
     k_std = 1
