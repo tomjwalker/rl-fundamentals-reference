@@ -52,46 +52,52 @@ class ValueIteration:
             np.abs(action)
 
     def value_iteration(self):
-        loop_idx = 0  # For logging training progress
+
+        # TODO: temp
+        loop_idx = 0
+
+        # Lecture algorithm pseudo-code: "repeat:"
         while True:
-            delta = 0
+
+            # HOMEWORK: delta <- 0
+            delta: float = 0
 
             # Efficiently calculate expected returns for all states
             self._update_expected_return_array()
 
+            # Initialise available actions
             available_actions = np.arange(-self.env.max_move_cars, self.env.max_move_cars + 1)
+
+            # For each s in S
             for state_1 in range(self.max_cars + 1):
                 for state_2 in range(self.max_cars + 1):
 
-                    # Initialise {best_action, best_return} dict for this state
+                    # Initialise best_action and best_return for this state
+                    # A conditional if block will then enact the argmax_a{expected_return} operation
                     best_action = None
                     best_return = -np.inf
 
-                    # v <- V(s)
-                    old_value = self.value[state_1, state_2]
-
-                    # ==================================================================================================
-                    # V(s) <- max_a sum_{s', r} p(s', r|s, a) [r + gamma V(s')]
-                    # ==================================================================================================
+                    # HOMEWORK: store old value ("v <- V(s)"). c.f. self.value
+                    old_value: float = self.value[state_1, state_2]
 
                     # Loop through all possible actions
                     for action in available_actions:
 
-                        # Calculate s'' (the next morning's state after redistribution.
-                        # Action a moves cars from location 1 to location 2, so:
-                        #    - s''_1 = s_1 - a
-                        #    - s''_2 = s_2 + a
-                        state_1_morning = state_1 - action
-                        state_2_morning = state_2 + action
+                        # HOMEWORK: the environment object has a method that computes the next state given the current state
+                        # and the action.
+                        # Use this method to compute the next state: next_state = env.compute_next_state(...)
+                        next_state = self.env.compute_next_state((state_1, state_2), action)
 
                         # If these new states fall outside the range of possible states, then continue
-                        if state_1_morning < 0 or state_1_morning > self.max_cars or \
-                                state_2_morning < 0 or state_2_morning > self.max_cars:
+                        if next_state is None:
                             continue
+
+                        # Unpack the next state
+                        next_state_1, next_state_2 = next_state
 
                         # expected return = sum_{s', r} p(s', r|s, a) [r + gamma V(s')]
                         # Use helper function _get_expected_return for this calculation
-                        expected_return = self._get_expected_return(state_1_morning, state_2_morning, action)
+                        expected_return: float = self._get_expected_return(next_state_1, next_state_2, action)
 
                         # Want max value (max_a(expected_return) for this state)
                         # Also want to store the action that led to this max value
@@ -99,13 +105,13 @@ class ValueIteration:
                             best_return = expected_return
                             best_action = action
 
-                    # V(s) <- max_a expected return
+                    # HOMEWORK: update value as best return ("V_*(s) <- max_a{expected_return}")
                     self.value[state_1, state_2] = best_return
 
-                    # Update policy
+                    # HOMEWORK: Update policy with best action
                     self.policy[state_1, state_2] = best_action
 
-                    # delta <- max(delta, |v - V(s)|)
+                    # HOMEWORK: delta <- max(delta, |v - V(s)|)
                     delta = max(delta, np.abs(old_value - self.value[state_1, state_2]))
 
             print(f"Value improvement: loop {loop_idx}, delta = {delta}")
@@ -115,8 +121,11 @@ class ValueIteration:
 
             loop_idx += 1
 
+            # HOMEWORK START: (2 lines)
+            # If delta < self.theta, then the value function has converged, and policy evaluation can stop (break loop)
             if delta < self.theta:
                 break
+            # HOMEWORK END
 
         return self.policy, self.value
 
