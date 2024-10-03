@@ -19,6 +19,8 @@
   - **Method to Complete:**
     - `[method_name]`
 
+---
+
 ## Instructions
 
 ### Step 1: [First Task]
@@ -66,6 +68,8 @@
 ![Description of Image](images/[assignment_name]/[image_name].png)
 
 *Brief description of what the image illustrates.*
+
+---
 
 ## Additional Resources
 
