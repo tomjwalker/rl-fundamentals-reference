@@ -63,7 +63,7 @@ class MCExploringStartsAgent(MonteCarloAgent):
         self.policy = DeterministicPolicy(state_shape)
 
         # Overwrite with initial policy from Sutton and Barto
-        self.policy.value[:19, :, :] = 1
+        self.policy.action_map[:19, :, :] = 1
 
     def reset(self) -> None:
         """
