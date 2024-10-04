@@ -11,7 +11,7 @@ from rl.common.policy import DeterministicPolicy
 from rl.common.results_logger import ResultsLogger
 
 import gymnasium as gym
-from typing import Union, Tuple, List, Optional
+from typing import Union, Tuple, List
 from gymnasium import Env
 
 import matplotlib.pyplot as plt
@@ -45,7 +45,7 @@ class MCExploringStartsAgent(MonteCarloAgent):
 
         # Initialise Monte Carlo-specific attributes
         self.name: str = "MC Exploring Starts"  # For plotting
-        self.policy: Optional[DeterministicPolicy] = None
+        self.policy: Union[DeterministicPolicy, None] = None
         self.reset()
 
     def _init_policy(self, state_shape: Tuple[int, ...]) -> None:

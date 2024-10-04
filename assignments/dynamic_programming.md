@@ -59,7 +59,6 @@ Within the `rl/algorithms/dynamic_programming/value_iteration.py` module:
    - Comments guide you line-by-line through the algorithm
 
 2. **Run `value_iteration`:**
-   - Open `[file_path]`.
    - Execute the script (from the root directory in the terminal):
      ```bash
      python -m rl.algorithms.dynamic_programming.value_iteration

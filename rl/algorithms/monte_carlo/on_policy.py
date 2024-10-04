@@ -1,15 +1,15 @@
 """
-TODO:
-    - Figure out strange policy plots
-    - Look into this: https://trevormcguire.medium.com/blackjack-stocks-and-reinforcement-learning-ea4014115aeb
 """
+# TODO: Figure out strange policy plots
+# TODO: Look into this: https://trevormcguire.medium.com/blackjack-stocks-and-reinforcement-learning-ea4014115aeb
+
 
 from rl.algorithms.monte_carlo.viz import plot_results
 from rl.algorithms.common.mc_agent import MonteCarloAgent
 from rl.common.policy import EpsilonGreedyPolicy
 
 import gymnasium as gym
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple
 from gymnasium import Env
 from rl.common.results_logger import ResultsLogger
 
@@ -51,7 +51,7 @@ class MCOnPolicy(MonteCarloAgent):
         super().__init__(env, gamma, epsilon, logger, random_seed)
 
         self.name: str = "MC On-Policy"  # For plotting
-        self.policy: Optional[EpsilonGreedyPolicy] = None
+        self.policy: Union[EpsilonGreedyPolicy, None] = None
         self.reset()
 
     def reset(self) -> None:
@@ -91,9 +91,15 @@ class MCOnPolicy(MonteCarloAgent):
                 print(f"Episode {episode_idx}/{num_episodes}")
 
             # Generate an episode
+            # HOMEWORK: Generate an episode.
+            # In the Exploring Starts module, you used `exploring_starts=True`.
+            # Here, we want to use `exploring_starts=False`.
             episode = self._generate_episode(exploring_starts=False)
 
             # Loop through the episode in reverse order, updating the q-values and policy
+            # HOMEWORK STARTS: (~10 lines of code) Update the q-values by looping through the episode in reverse order.
+            # This part of the code is almost identical to the Exploring Starts module learn method,
+            # but note that we do not need the final line to update the policy here.
             returns: float = 0
             for t, (state, action, reward) in enumerate(reversed(episode)):
                 returns = self.gamma * returns + reward
@@ -109,6 +115,7 @@ class MCOnPolicy(MonteCarloAgent):
                 step_size: float = 1 / self.state_action_counts.get(state, action)
                 new_value: float = self.q_values.get(state, action) + step_size * mc_error
                 self.q_values.update(state, action, new_value)
+            # HOMEWORK ENDS
 
             # Log the episode
             self.logger.log_episode()
