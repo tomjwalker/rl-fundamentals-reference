@@ -27,24 +27,25 @@ class BasePolicy:
         raise NotImplementedError
 
 
-class DeterministicPolicy:
+class DeterministicPolicy(BasePolicy):
     """
     A deterministic policy that selects the action with the highest value for each state.
     (π(s) → a = argmax_a Q(s, a))
 
     Args:
         state_shape (Tuple[int, ...]): The shape of the environment state space.
+        dtype (type, optional): The data type for the action map. Default is np.int8.
     """
-    # TODO: unify with EpsilonGreedyPolicy / BasePolicy
-    #   (including dtype)
-    def __init__(self, state_shape: Tuple[int, ...]) -> None:
+    def __init__(self, state_shape: Tuple[int, ...], dtype: type = np.int8) -> None:
         """
         Initialises the DeterministicPolicy.
 
         Args:
             state_shape (Tuple[int, ...]): The shape of the environment state space.
+            dtype (type, optional): The data type for the action map. Default is np.int8.
         """
-        self.action_map: np.ndarray = np.zeros(state_shape, dtype=np.int8)
+        super().__init__(action_space=int(np.prod(state_shape)))
+        self.action_map: np.ndarray = np.zeros(state_shape, dtype=dtype)
 
     def select_action(self, state: Tuple[int, ...]) -> int:
         """
@@ -56,6 +57,7 @@ class DeterministicPolicy:
         Returns:
             int: The action selected by the policy.
         """
+        # HOMEWORK: with the given state, return the action (1:1 mapping as deterministic) via self.action_map
         action: int = self.action_map[state]
         return action
 

@@ -39,7 +39,8 @@ def _get_policy_for_agent(mc_agent, usable_ace):
     """
     if mc_agent.name == "MC Exploring Starts" or mc_agent.name == "MC Off-Policy":
         # For deterministic policies
-        policy = mc_agent.policy.value[PLAYER_MIN_POLICY:PLAYER_MAX+1, DEALER_MIN:DEALER_MAX+1, 1 if usable_ace else 0]
+        policy = mc_agent.policy.action_map[PLAYER_MIN_POLICY:PLAYER_MAX+1, DEALER_MIN:DEALER_MAX+1, 1 if usable_ace
+                                                                                                  else 0]
     elif mc_agent.name == "MC On-Policy":
         # For stochastic policies, return the action with the highest probability
         if usable_ace:
