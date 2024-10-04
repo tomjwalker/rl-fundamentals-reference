@@ -11,7 +11,7 @@ from rl.common.policy import DeterministicPolicy
 from rl.common.results_logger import ResultsLogger
 
 import gymnasium as gym
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Optional
 from gymnasium import Env
 
 import matplotlib.pyplot as plt
@@ -45,7 +45,7 @@ class MCExploringStartsAgent(MonteCarloAgent):
 
         # Initialise Monte Carlo-specific attributes
         self.name: str = "MC Exploring Starts"  # For plotting
-        self.policy: DeterministicPolicy = None
+        self.policy: Optional[DeterministicPolicy] = None
         self.reset()
 
     def _init_policy(self, state_shape: Tuple[int, ...]) -> None:
@@ -168,7 +168,8 @@ def run(num_episodes: int = 50000) -> None:
 
     # Run parameters
     train_episodes: int = num_episodes
-    # To generate more converged results similar to the lecture slides, set num_episodes to 500000 when calling the run function.
+    # To generate more converged results similar to the lecture slides,
+    # set num_episodes to 500000 when calling the run function.
 
     # Instantiate and learn the agent
     env: Env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto
