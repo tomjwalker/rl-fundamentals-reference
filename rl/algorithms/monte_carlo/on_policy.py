@@ -9,7 +9,7 @@ from rl.algorithms.common.mc_agent import MonteCarloAgent
 from rl.common.policy import EpsilonGreedyPolicy
 
 import gymnasium as gym
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 from gymnasium import Env
 from rl.common.results_logger import ResultsLogger
 
@@ -51,7 +51,7 @@ class MCOnPolicy(MonteCarloAgent):
         super().__init__(env, gamma, epsilon, logger, random_seed)
 
         self.name: str = "MC On-Policy"  # For plotting
-        self.policy: EpsilonGreedyPolicy = None
+        self.policy: Optional[EpsilonGreedyPolicy] = None
         self.reset()
 
     def reset(self) -> None:
@@ -94,9 +94,9 @@ class MCOnPolicy(MonteCarloAgent):
             episode = self._generate_episode(exploring_starts=False)
 
             # Loop through the episode in reverse order, updating the q-values and policy
-            g: float = 0
+            returns: float = 0
             for t, (state, action, reward) in enumerate(reversed(episode)):
-                g = self.gamma * g + reward
+                returns = self.gamma * returns + reward
 
                 # If the S_t, A_t pair has been seen before, continue.
                 if self._is_subelement_present((state, action), episode[:len(episode) - t - 1]):
@@ -104,7 +104,7 @@ class MCOnPolicy(MonteCarloAgent):
 
                 # Update the q-value for this state-action pair
                 # NewEstimate <- OldEstimate + 1/N(St, At) * (Return - OldEstimate)
-                mc_error: float = g - self.q_values.get(state, action)
+                mc_error: float = returns - self.q_values.get(state, action)
                 self.state_action_counts.update(state, action)  # Get N(St, At)
                 step_size: float = 1 / self.state_action_counts.get(state, action)
                 new_value: float = self.q_values.get(state, action) + step_size * mc_error
@@ -114,12 +114,12 @@ class MCOnPolicy(MonteCarloAgent):
             self.logger.log_episode()
 
 
-def run() -> None:
+def run(num_episodes: int = 50000) -> None:
     """
     Runs the MCOnPolicy agent on the Blackjack environment and plots the results.
     """
     # Run parameters
-    train_episodes: int = 50000
+    train_episodes: int = num_episodes
 
     # Create the environment
     env: Env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto
@@ -131,4 +131,15 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run the MCOnPolicy agent on the Blackjack environment.")
+    parser.add_argument(
+        '--num_episodes',
+        type=int,
+        default=50000,
+        help="Number of episodes to train for. Use a larger number for more convergence."
+    )
+    args = parser.parse_args()
+
+    run(num_episodes=args.num_episodes)
