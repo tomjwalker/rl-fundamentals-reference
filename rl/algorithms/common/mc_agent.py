@@ -69,6 +69,7 @@ class MonteCarloAgent(BaseAgent):
 
         episode = []
 
+        # Reset environment
         if exploring_starts:
             state, info = self.env.reset()  # S_0
             action = np.random.randint(0, self.env.action_space.n)  # A_0: choice of {0, 1}
@@ -78,12 +79,23 @@ class MonteCarloAgent(BaseAgent):
 
         # Generate an episode
         while True:
+
+            # HOMEWORK: Make a step of the environment (c.f. Gymnasium API: https://gymnasium.farama.org/api/env/)
             next_state, reward, terminated, truncated, info = self.env.step(action)
+
+            # HOMEWORK: Append the state, action, and reward to the episode
             episode.append((state, action, reward))
+
+            # HOMEWORK: establish if done (this is when either of the boolean flags terminated or truncated are True)
             done = terminated or truncated
+
             if done:
                 break
+
+            # HOMEWORK: the next state becomes the current state
             state = next_state
+
+            # HOMEWORK: the next action is selected by the agent
             action = self.act(state)
 
         # Log timestep

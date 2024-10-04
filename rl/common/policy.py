@@ -115,12 +115,14 @@ class EpsilonGreedyPolicy(BasePolicy):
         Returns:
             int: The action to be taken.
         """
+        # HOMEWORK STARTS: (~ 6 lines) implement the epsilon-greedy policy
         if np.random.random() < self.epsilon:
             action: int = np.random.choice(self.action_space)
             return action
         else:
             action: int = q_values.get_max_action(state, ties=ties)
             return action
+        # HOMEWORK ENDS
 
     def compute_probs(self, state: Tuple[int, ...], q_values: QValueTable) -> np.ndarray:
         """
