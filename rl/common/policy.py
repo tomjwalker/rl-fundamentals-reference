@@ -12,6 +12,10 @@ class BasePolicy:
 
 
 class DeterministicPolicy:
+    """
+    A deterministic policy that selects the action with the highest value for each state.
+    (π(s) → a = argmax_a Q(s, a))
+    """
     # TODO: unify with EpsilonGreedyPolicy / BasePolicy
     #   (including dtype)
     # TODO: "value" risks confusion with value function?
@@ -19,7 +23,9 @@ class DeterministicPolicy:
         self.value = np.zeros(state_shape, dtype=np.int8)
 
     def select_action(self, state: Tuple[int, ...]) -> int:
-        return self.value[state]
+        # HOMEWORK: implement the method to select an action
+        action = self.value[state]
+        return action
 
     def update(
             self,
