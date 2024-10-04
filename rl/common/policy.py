@@ -37,7 +37,6 @@ class DeterministicPolicy:
     """
     # TODO: unify with EpsilonGreedyPolicy / BasePolicy
     #   (including dtype)
-    # TODO: "value" risks confusion with value function?
     def __init__(self, state_shape: Tuple[int, ...]) -> None:
         """
         Initialises the DeterministicPolicy.
@@ -45,7 +44,7 @@ class DeterministicPolicy:
         Args:
             state_shape (Tuple[int, ...]): The shape of the environment state space.
         """
-        self.value: np.ndarray = np.zeros(state_shape, dtype=np.int8)
+        self.action_map: np.ndarray = np.zeros(state_shape, dtype=np.int8)
 
     def select_action(self, state: Tuple[int, ...]) -> int:
         """
@@ -57,7 +56,7 @@ class DeterministicPolicy:
         Returns:
             int: The action selected by the policy.
         """
-        action: int = self.value[state]
+        action: int = self.action_map[state]
         return action
 
     def update(
@@ -74,7 +73,7 @@ class DeterministicPolicy:
             q_values (QValueTable): The Q-value table for the agent.
             ties (str, optional): Strategy to break ties, default is "random".
         """
-        self.value[state] = q_values.get_max_action(state, ties=ties)
+        self.action_map[state] = q_values.get_max_action(state, ties=ties)
 
 
 class EpsilonGreedyPolicy(BasePolicy):
