@@ -1,17 +1,41 @@
 from rl.algorithms.common.td_agent import TemporalDifferenceAgent
-
 import numpy as np
+from rl.common.results_logger import ResultsLogger
+from typing import Union
 
 
 class ExpectedSarsa(TemporalDifferenceAgent):
+    """
+    Expected SARSA algorithm for Temporal Difference learning.
 
-    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, logger=None, random_seed=None):
+    Args:
+        env: The environment to interact with.
+        alpha (float): Learning rate.
+        gamma (float): Discount factor for future rewards.
+        epsilon (float): Exploration parameter for epsilon-greedy policy.
+        logger (ResultsLogger, optional): Logger for tracking results during training.
+        random_seed (int, optional): Seed for reproducibility.
+    """
+
+    def __init__(
+        self,
+        env,
+        alpha: float = 0.5,
+        gamma: float = 1.0,
+        epsilon: float = 0.1,
+        logger: Union[ResultsLogger, None] = None,
+        random_seed: Union[int, None] = None
+    ) -> None:
         super().__init__(env, gamma, alpha, epsilon, logger, random_seed)
-
-        self.name = "Expected Sarsa"
+        self.name: str = "Expected Sarsa"
 
     def learn(self, num_episodes: int = 500) -> None:
+        """
+        Trains the Expected SARSA agent for a given number of episodes.
 
+        Args:
+            num_episodes (int): Number of episodes to train the agent.
+        """
         # HOMEWORK BEGINS: Implement the Expected Sarsa algorithm (~14 lines). Refer to the Sarsa implementation.
 
         for episode in range(num_episodes):
@@ -20,24 +44,24 @@ class ExpectedSarsa(TemporalDifferenceAgent):
             state, _ = self.env.reset()
 
             # Loop over each step of episode, until S is terminal
-            done = False
+            done: bool = False
             while not done:
 
                 # Choose A from S using policy derived from Q (epsilon-greedy)
-                action = self.act(state)
+                action: int = self.act(state)
 
                 # Take action A, observe R, S'
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
 
                 # Compute expected value of Q(S', A') under policy pi: sum_a pi(a|S') * Q(S', a)
-                action_values = self.q_values.get(next_state)
-                prob_values = self.policy.compute_probs(next_state, self.q_values)
-                expected_value = np.sum(prob_values * action_values)
+                action_values: np.ndarray = self.q_values.get(next_state)
+                prob_values: np.ndarray = self.policy.compute_probs(next_state, self.q_values)
+                expected_value: float = np.sum(prob_values * action_values)
 
                 # Update Q(S, A), taking as target the expected-sarsa TD target (R + gamma * sum_a pi(a|S') * Q(S', a))
-                td_target = reward + self.gamma * expected_value
-                td_error = td_target - self.q_values.get(state, action)
-                new_value = self.q_values.get(state, action) + self.alpha * td_error
+                td_target: float = reward + self.gamma * expected_value
+                td_error: float = td_target - self.q_values.get(state, action)
+                new_value: float = self.q_values.get(state, action) + self.alpha * td_error
                 self.q_values.update(state, action, new_value)
 
                 # S <- S', A <- A'
