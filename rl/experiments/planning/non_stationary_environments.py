@@ -18,6 +18,9 @@ from typing import Optional
 matplotlib.use('TkAgg')
 
 
+# TODO: currently plot for BlockingMaze not matching S&B - dyna-q (vanilla) sub-par
+
+
 def run(environment_name: str, train_episodes: int, n_runs: int, agents: Optional[list] = None) -> None:
     """
     Run the Dyna and Dyna-Q+ experiments in the specified gridworld environment.
