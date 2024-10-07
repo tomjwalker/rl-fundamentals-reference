@@ -1,87 +1,79 @@
-# Assignment: [Assignment Title]
+# Assignment: Temporal Difference methods
 
 ## Overview
 
-[Provide a brief overview of the assignment and its significance.]
+In this assignment, you will implement Temporal Difference methods for solving reinforcement learning problems.
+
+Algorithms:
+- SARSA
+- Q-learning
+- Expected SARSA
+
+Environment:
+- Cliff Walking
+
+N.B. the code is more modular than previous assignments.
+- Similar methods are extracted to highest level superclasses possible.
+- All three Temporal Difference algorithms are tested in a single script, `experiments/temporal_difference/cliff_walking_learning_curves.py`.
+
 
 ## Objectives
 
-- [Objective 1]
-- [Objective 2]
-- [Objective 3]
+- Implement the SARSA algorithm
+- Implement the Q-learning algorithm
+- Implement the Expected SARSA algorithm
+- Understand the more modular structure of the codebase
 
 ## Files to Work On
 
-- `[path/to/file1.py]`
-  - **Function to Implement:**
-    - `[function_name]`
-- `[path/to/file2.py]`
-  - **Method to Complete:**
-    - `[method_name]`
+- `rl/algorithms/common/td_agent.py`
+- `rl/algorithms/temporal_difference/sarsa.py`
+- `rl/algorithms/temporal_difference/q_learning.py`
+- `rl/algorithms/temporal_difference/expected_sarsa.py`
 
 ---
 
 ## Instructions
-
-### Step 1: [First Task]
-
-1. **Implement `[Function/Method]` in `[File]`:**
-   - [Brief instruction or description.]
-   - **Hint:** [Optional hint.]
-
-2. **Run `[Experiment/Script]`:**
-   - Open `[file_path]`.
-   - Uncomment the relevant experiment line:
-     ```python
-     # [Experiment Name]
-     [experiment_function]()
-     ```
+0. **Inspect**: The approach is now more modular
+   - SARSA, Q-learning, and Expected SARSA algorithms are all now tested in a central experiment script at 
+     `experiments/temporal_difference/cliff_walking_learning_curves.py`
+   - Inspect this script, along with the object it inherits from, `rl.simulation.trial.Trial`
+   - Recall from the lecture, in this course a Session is a single traning run of the MDP
+   - A Trial is then a set of Sessions, which can be averaged to produce learning curves with greater statistical significance
+1. **Implement `TemporalDifferenceAgent.act` in `rl/algorithms/common/td_agent.py`:**
+   - This method is common to all three child classes: SARSA, Q-learning, and Expected SARSA, so implement it here.
+2. **Implement `Sarsa.learn` in `rl/algorithms/temporal_difference/sarsa.py`:**
+   - In this instance, you are guided through the implementation almost line-by-line
+3. **Implement `QLearning.learn` in `rl/algorithms/temporal_difference/q_learning.py`:**
+   - You are left to implement the entire method yourself; it is very similar to SARSA
+4. **Implement `ExpectedSarsa.learn` in `rl/algorithms/temporal_difference/expected_sarsa.py`:**
+   - You are left to implement the entire method yourself; it is very similar to SARSA
+5. **Run** the experiment on the Cliff Walking environment:
    - Execute the script:
      ```bash
-     python [path/to/script.py]
+     python -m rl.experiments.temporal_difference.cliff_walking_learning_curves --sessions 30 --episodes_per_session 500
      ```
-   - **Observe:** [Brief description of expected observations.]
+   - (You can play with the number of sessions and episodes per session to see how the algorithms converge) 
 
-### Step 2: [Second Task]
-
-1. **Implement `[Function/Method]` in `[File]`:**
-   - [Brief instruction or description.]
-   - **Hint:** [Optional hint.]
-
-2. **Run `[Experiment/Script]`:**
-   - Open `[file_path]`.
-   - Uncomment the relevant experiment line:
-     ```python
-     # [Experiment Name]
-     [experiment_function]()
-     ```
-   - Execute the script:
-     ```bash
-     python [path/to/script.py]
-     ```
-   - **Observe:** [Brief description of expected observations.]
 
 ## Expected Outputs
 
-### [Experiment Name]
+![Learning curves](../images/temporal_difference/learning_curves.png)
 
-![Description of Image](images/[assignment_name]/[image_name].png)
+*Learning curves, averaged over 30 runs.*
 
-*Brief description of what the image illustrates.*
+![Learning curves](../images/temporal_difference/q_tables.png)
+
+*A plot of state values (coloured background; dimensions to match environment) and max(action values) (arrows).*
 
 ---
 
 ## Additional Resources
 
-- [Resource 1](URL)
-- [Resource 2](URL)
-
-## Notes
-
-- Ensure reproducibility by setting the random seed.
-- Utilize vectorized operations for efficiency.
-- Verify dependencies: NumPy, Pandas, Matplotlib, etc.
-- Experiment with different parameters to enhance understanding.
+- Sutton & Barto (2018): Reinforcement Learning: An Introduction (Second Edition), Chapter 6
+    - Covers the theory behind temporal difference methods
+    - Application of TD methods to Cliff Walking
+- Temporal Difference: Lecture Notes
 
 ---
 Good luck with your assignment!
