@@ -5,7 +5,6 @@
 
 
 import gymnasium as gym
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('TkAgg')
@@ -62,4 +61,3 @@ axs[1, 1].set_xlabel("Action")
 
 plt.tight_layout()
 plt.show()
-

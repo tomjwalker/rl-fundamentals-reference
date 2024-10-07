@@ -128,11 +128,11 @@ class MCExploringStartsAgent(MonteCarloAgent):
                 mc_error: float = returns - self.q_values.get(state, action)
 
                 # HOMEWORK: Increment N(St, At).
-                # self.state_action_counts tracks N(St, At), and has a method to update it.
-                self.state_action_counts.update(state, action)
+                # self.state_action_stats tracks N(St, At), and has a method to update it.
+                self.state_action_stats.update(state, action)
 
                 # HOMEWORK: step_size = 1 / N(St, At)
-                step_size: float = 1 / self.state_action_counts.get(state, action)
+                step_size: float = 1 / self.state_action_stats.get(state, action)
 
                 # HOMEWORK: Calculate NewEstimate = OldEstimate + 1/N(St, At) * (Return - OldEstimate)
                 new_value: float = self.q_values.get(state, action) + step_size * mc_error

@@ -128,6 +128,10 @@ class EpsilonGreedyPolicy(BasePolicy):
         """
         Computes the action probabilities for the given state.
 
+        As this is epsilon-greedy, this means the probabilities are:
+            - epsilon / action_space for all actions
+            - 1 - epsilon + epsilon / action_space for the best action
+
         Args:
             state (Tuple[int, ...]): The current state of the environment.
             q_values (QValueTable): The Q-value table for the agent.
@@ -135,7 +139,16 @@ class EpsilonGreedyPolicy(BasePolicy):
         Returns:
             np.ndarray: The probability distribution over actions.
         """
+        # Initialise probabilities as epsilon / size of action space everywhere. Useful:
+        # - np.ones
+        # - self.action_space
+        # - self.epsilon
         probs: np.ndarray = np.ones(self.action_space) * self.epsilon / self.action_space
+
+        # HOMEWORK: find the best action (q_values has a relevant method for this)
         best_action: int = q_values.get_max_action(state)
+
+        # HOMEWORK: update the probability of the best action to 1 - epsilon + epsilon / action_space
         probs[best_action] = 1 - self.epsilon + self.epsilon / self.action_space
+
         return probs

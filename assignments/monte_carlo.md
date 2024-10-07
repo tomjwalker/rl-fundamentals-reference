@@ -65,13 +65,13 @@ TODO: Discuss motivations for moving to OOP (c.f. Bandit / Dynamic Programming r
     - Initialised with an `EpisilonGreedyPolicy` policy object.
     - N.B., unlike the Exploring Starts demo, here policy is initialised as all zeros (more general approach - no prior 
    knowledge).
-1. **Implement `MCExploringStartsAgent.act` in `exploring_starts.py`:**
+1. **Implement `MCOnPolicy.act` in `exploring_starts.py`:**
    - This is a single line of code in the method itself
    - However, it will require you to also implement `select_action` within the `EpsilonGreedyPolicy` class in 
      `policy.py` 
    - This is around 6 lines of code (less handholding at points from now on, but you can refer to a similar 
      implementation from the multi-armed bandit assignment)
-2. **Implement `MCExploringStartsAgent.learn` in `exploring_starts.py`:**
+2. **Implement `MCOnPolicy.learn` in `exploring_starts.py`:**
    - This is almost identical to the learn method of Exploring Starts - most of the different behaviour comes from the 
      policy object and its use generating episodes.
 3. **Run:**
@@ -86,7 +86,7 @@ TODO: Discuss motivations for moving to OOP (c.f. Bandit / Dynamic Programming r
      ```
 3. **Observe:** 
 
-![Exploring starts](../images/monte_carlo/on_policy.png)
+![On policy](../images/monte_carlo/on_policy.png)
 
 *A learnt policy after 500,000 iterations. Top plots: state value function. Bottom plots: policies*
 
@@ -95,36 +95,51 @@ TODO: Discuss motivations for moving to OOP (c.f. Bandit / Dynamic Programming r
 <details>
 <summary><h3>Step 3: Off-policy control</h3></summary>
 
-1. **Implement `[Function/Method]` in `[File]`:**
-   - [Brief instruction or description.]
-   - **Hint:** [Optional hint.]
-
-2. **Run `[Experiment/Script]`:**
-   1. Open `[file_path]`.
-   2. Execute the script:
+0. **Inspect**: You will be focussing on the `act` and `learn` methods.Here, as there are more steps in the 
+   `off_policy` learn method, the non-episode-generation part is separated out into a helper method, `_update_q_and_pi`
+    which you will also implement.
+    - Initialised with an `EpisilonGreedyPolicy` policy object.
+    - N.B., unlike the Exploring Starts demo, here policy is initialised as all zeros (more general approach - no prior 
+   knowledge).
+2. **Implement `MCOffPolicy.__init__`
+    - Initialise a deterministic policy object for the **target policy**.
+    - Initialise an epsilon-greedy policy object for the **behaviour policy**.
+3. **Implement `MCOffPolicy.act` in `exploring_starts.py`:**
+   - This is a single line of code in the method itself. There are two policy attributes for the class - make sure 
+     to use the right one!
+4. **Implement `MCOffPolicy.update_q_and_pi` helper method:**
+   - This implements all steps of the off-policy update, except for the generation of episodes (see `<class>.learn`) 
+     for the overall structure.
+   - In this instance, `self.state_action_stats` tracks the cumulative sum of importance sampling ratios, C(s, a).
+   - The `update_importance_sampling` method needs to be completed for this object.
+   - Being able to compute probabilities `b(s | a)` also necessary - you need to complete the `EpsilonGreedyPolicy.
+     compute_probs` method.
+5. **Run:**
+   - Execute the script (from the root directory in the terminal):
      ```bash
-     python [path/to/script.py]
+     python -m rl.algorithms.monte_carlo.off_policy
      ```
-3. **Observe:** [Brief description of expected observations.]
+   - If you want more converged results closer to those in the lecture slides, 
+   you can increase the number of episodes to 500,000.
+     ```bash
+     python -m rl.algorithms.monte_carlo.off_policy --num_episodes 500000
+     ```
+3. **Observe:** 
+
+![On policy](../images/monte_carlo/off_policy.png)
+
+*A learnt policy after 500,000 iterations. Top plots: state value function. Bottom plots: policies*
 
 </details>
-
-
-*Brief description of what the image illustrates.*
 
 ---
 
 ## Additional Resources
 
-- [Resource 1](URL)
-- [Resource 2](URL)
-
-## Notes
-
-- Ensure reproducibility by setting the random seed.
-- Utilize vectorized operations for efficiency.
-- Verify dependencies: NumPy, Pandas, Matplotlib, etc.
-- Experiment with different parameters to enhance understanding.
+- Sutton & Barto (2018): Reinforcement Learning: An Introduction (Second Edition), Chapter 5
+    - Covers the theory behind monte carlo methods
+    - Application of MC methods to Blackjack
+- Monte Carlo: Lecture Notes
 
 ---
 Good luck with your assignment!
