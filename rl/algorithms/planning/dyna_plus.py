@@ -77,7 +77,7 @@ class TimeSinceLastEncountered(QValueTable):
             num_states (int): The number of states in the environment.
             num_actions (int): The number of actions available in the environment.
         """
-        super().__init__(num_states, num_actions)
+        super().__init__((num_states,), num_actions)
 
     def increment(self, state: Union[int, Tuple[int, ...]], action: int) -> None:
         """
