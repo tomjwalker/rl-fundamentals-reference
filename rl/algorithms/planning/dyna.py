@@ -39,6 +39,7 @@ class DynaModel:
             reward (float): The reward received after taking the action.
             next_state (int): The next state after taking the action.
         """
+        # HOMEWORK: Add a (r, s') transition to the model for a given (s, a) pair.
         self.model[state][action] = (reward, next_state)
 
     def get(self, state: int, action: int) -> Tuple[float, int]:
@@ -61,8 +62,14 @@ class DynaModel:
         Returns:
             Tuple[int, int]: A tuple containing a randomly selected state and action.
         """
+        # HOMEWORK: sample a random state and action from the model. Use random.choice() alongside list() to sample from
+        # the keys of the model dictionary (top-level keys are states).
         state: int = random.choice(list(self.model.keys()))
+
+        # HOMEWORK: sample a random action from the model. Use random.choice() alongside list() to sample from
+        # the keys of the nested dictionary (second-level keys are actions).
         action: int = random.choice(list(self.model[state].keys()))
+
         return state, action
 
 

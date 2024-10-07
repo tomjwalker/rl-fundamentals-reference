@@ -1,6 +1,5 @@
 # TODO: plot of policies half way through second episode
 
-
 from rl.environment.planning.planning_maze import Maze
 import pandas as pd
 
@@ -9,25 +8,30 @@ from rl.algorithms.planning.dyna import Dyna
 
 import matplotlib
 from matplotlib import pyplot as plt
+import argparse
+
 matplotlib.use('TkAgg')
 
+def run(train_episodes: int, gamma: float, alpha: float, epsilon: float, planning_steps: list) -> None:
+    """
+    Run the Dyna experiment in the Maze environment with different planning step configurations.
 
-def run():
-
+    Args:
+        train_episodes (int): Number of episodes to train the agent.
+        gamma (float): Discount factor for the agent.
+        alpha (float): Learning rate for the agent.
+        epsilon (float): Probability of choosing a random action (epsilon-greedy policy).
+        planning_steps (list): List of planning steps to run (e.g., [0, 5, 50]).
+    """
     # Run parameters
-    train_episodes = 50
-    gamma = 0.95
-    alpha = 0.1
-    epsilon = 0.1
     run_specs = {
-        "planning steps": [0, 5, 50],
+        "planning steps": planning_steps,
         "colour": ["blue", "green", "red"],
-        "label": ["0 planning steps (direct RL)", "5 planning steps", "50 planning steps"],
+        "label": [f"{steps} planning steps" for steps in planning_steps],
     }
     run_specs = pd.DataFrame(run_specs)
 
     for i, row in run_specs.iterrows():
-
         # Create the environment
         env = Maze()
 
@@ -46,6 +50,45 @@ def run():
     plt.legend()
     plt.show()
 
-
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser(description="Run Dyna agent in the Maze environment and plot the results.")
+    parser.add_argument(
+        '--train_episodes',
+        type=int,
+        default=50,
+        help="Number of episodes to train the agent."
+    )
+    parser.add_argument(
+        '--gamma',
+        type=float,
+        default=0.95,
+        help="Discount factor for the agent."
+    )
+    parser.add_argument(
+        '--alpha',
+        type=float,
+        default=0.1,
+        help="Learning rate for the agent."
+    )
+    parser.add_argument(
+        '--epsilon',
+        type=float,
+        default=0.1,
+        help="Probability of choosing a random action (epsilon-greedy policy)."
+    )
+    parser.add_argument(
+        '--planning_steps',
+        type=int,
+        nargs='+',
+        default=[0, 5, 50],
+        help="List of planning steps to run (e.g., 0 5 50)."
+    )
+    args = parser.parse_args()
+
+    run(
+        train_episodes=args.train_episodes,
+        gamma=args.gamma,
+        alpha=args.alpha,
+        epsilon=args.epsilon,
+        planning_steps=args.planning_steps
+    )
