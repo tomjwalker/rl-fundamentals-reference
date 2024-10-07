@@ -13,11 +13,16 @@ Environments:
 - Blocking Maze
 - Shortcut Maze
 
+|                 | Simple Maze (Stationary)                           | Blocking Maze (Non-stationary)                                     | Shortcut Maze (Non-stationary)                                     |
+| :---: | :---: | :---: | :---: |
+| Pre-transition  | ![Simple Maze](../images/planning/simple_maze.png) | ![Blocking Maze Initial](../images/planning/blocking_maze_pre.png) | ![Shortcut Maze Initial](../images/planning/shortcut_maze_pre.png) |
+| Post-transition | (same)                                             | ![Blocking Maze Final](../images/planning/blocking_maze_post.png) | ![Shortcut Maze Final](../images/planning/shortcut_maze_post.png) |
+
+
 ## Objectives
 
-- [Objective 1]
-- [Objective 2]
-- [Objective 3]
+- Observe Dyna-Q's greater sample efficiency over non-planning Q-learning
+- Observe Dyna-Q+'s improvements over Dyna-Q in non-stationary environments
 
 ## Files to Work On
 
@@ -38,11 +43,18 @@ Environments:
    - (`__init__` and `act` methods are already implemented, but inspect them for understanding.)
    - The learn method is left blank (less hand-holding than previous assignments) for you to complete. 
    - Remember, most of the algorithm closely follows Q-learning
-3. **Run `[Experiment/Script]`:**
-   - TODO XXXXXX
-   - Execute the script:
+3. **Run experiment for the standard Maze:**
+   - Execute the script for the initial planning Maze environment:
      ```bash
-     xxx
+     python -m rl.experiments.planning.planning_maze_experiment
+     ```
+   - Can run with different planning step parameters, e.g.:
+     ```bash
+     python -m rl.experiments.planning.planning_maze_experiment --planning_steps 10 20 30
+     ```
+   - Can run with different number of episodes, e.g.:
+     ```bash
+     python -m rl.experiments.planning.planning_maze_experiment --train_episodes 10
      ```
 
 ### Step 2: Dyna-Q+
@@ -61,12 +73,11 @@ Environments:
     - The learn method is left blank (less hand-holding than previous assignments) for you to complete. 
     - Note that `DynaPlus` inherits from the `Dyna` class
     - Note additional attributes for this class: `self.kappa`, `self.time_since_last_encountered`, and the altered `self.model` attribute.
-3. **Run `[Experiment/Script]`:**
-   - Execute the script for the Blocking Maze:
+3. **Run experiment for the Blocking Maze:**
      ```bash
      python -m rl.experiments.planning.non_stationary_environments
      ```
-    - Execute the script for the Shortcut Maze:
+4. **Run experiment for the Shortcut Maze:**
       ```bash
       python -m rl.experiments.planning.non_stationary_environments --environment_name ShortcutMaze
       ```
@@ -76,25 +87,33 @@ Environments:
 
 ## Expected Outputs
 
-### [Experiment Name]
+### Dyna-Q on standard Maze; planning step sweep
 
-![Description of Image](images/[assignment_name]/[image_name].png)
+![Description of Image](../images/planning/planning_step_sweep.png)
 
-*Brief description of what the image illustrates.*
+*Standard planning-free Q-learning (blue). Increasing number of planning steps between each real timestep in the 
+real environment (real timesteps x-axis) leads to significantly-increased sample-efficiency*
+
+### Dyna-Q+ vs Dyna-Q on non-stationary mazes
+
+![Description of Image](../images/planning/blocking_maze.png)
+
+*Standard planning-free Q-learning (blue). Increasing number of planning steps between each real timestep in the 
+real environment (real timesteps x-axis) leads to significantly-increased sample-efficiency*
+
+![Description of Image](../images/planning/shortcut_maze.png)
+
+*Standard planning-free Q-learning (blue). Increasing number of planning steps between each real timestep in the 
+real environment (real timesteps x-axis) leads to significantly-increased sample-efficiency*
 
 ---
 
 ## Additional Resources
 
-- [Resource 1](URL)
-- [Resource 2](URL)
-
-## Notes
-
-- Ensure reproducibility by setting the random seed.
-- Utilize vectorized operations for efficiency.
-- Verify dependencies: NumPy, Pandas, Matplotlib, etc.
-- Experiment with different parameters to enhance understanding.
+- Sutton & Barto (2018): Reinforcement Learning: An Introduction (Second Edition), Chapter 8
+    - Covers the theory behind planning methods
+    - Introduces the specific environments used in this assignment
+- Planning: Lecture Notes
 
 ---
 Good luck with your assignment!
