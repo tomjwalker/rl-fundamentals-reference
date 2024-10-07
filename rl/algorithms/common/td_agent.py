@@ -2,7 +2,6 @@ from rl.algorithms.common.base_agent import BaseAgent
 from rl.common.policy import EpsilonGreedyPolicy
 from rl.common.q_value_table import QValueTable
 from rl.common.results_logger import ResultsLogger
-import numpy as np
 
 
 class TemporalDifferenceAgent(BaseAgent):
@@ -29,8 +28,9 @@ class TemporalDifferenceAgent(BaseAgent):
         self.logger.reset()
 
     def act(self, state):
-        return self.policy.select_action(state, self.q_values)
+        # HOMEWORK: Select the action from the policy
+        action = self.policy.select_action(state, self.q_values)
+        return action
 
     def learn(self, num_episodes=500):
-        # TODO: check default value of num_episodes
         raise NotImplementedError
