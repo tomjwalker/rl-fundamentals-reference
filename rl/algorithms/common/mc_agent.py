@@ -122,9 +122,10 @@ class MonteCarloAgent(BaseAgent):
             exploring_starts (bool, optional): If True, starts with a random action.
 
         Returns:
-            List[Tuple[Tuple[int, ...], int, float]]: The generated episode consisting of (state, action, reward) tuples.
+            List[Tuple[Tuple[int, ...], int, float]]:
+            The generated episode consisting of (state, action, reward) tuples.
         """
-        episode: List[Tuple[Tuple[int, ...], int, float]] = []
+        episode: List = []
 
         # Reset environment
         if exploring_starts:
@@ -167,3 +168,11 @@ class MonteCarloAgent(BaseAgent):
         self.q_values = QValueTable(self.state_shape, self.env.action_space.n)
         self.state_action_stats = StateActionStats(self.state_shape, self.env.action_space.n)
         self.logger.reset()
+
+    def act(self, state: int) -> int:
+        """Choose an action based on the current state and policy."""
+        raise NotImplementedError
+
+    def learn(self, num_episodes: int = 500) -> None:
+        """Train the agent over a specified number of episodes."""
+        raise NotImplementedError
