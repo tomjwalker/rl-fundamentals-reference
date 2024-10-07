@@ -21,12 +21,12 @@ class DynaPlusModel(DynaModel):
 
     def add(self, state, action, reward, next_state):
 
-        # If state is newly encountered, initialise all actions with (reward=0, next_state=state)
         if state not in self.model.keys():
             for a in range(self.num_actions):
+                # HOMEWORK: If state is newly encountered, initialise all actions with (reward=0, next_state=state)
                 self.model[state][a] = (0, state)
 
-        # Add the actual transition
+        # HOMEWORK: Add the actual transition
         self.model[state][action] = (reward, next_state)
 
 
@@ -47,7 +47,11 @@ class TimeSinceLastEncountered(QValueTable):
         super().__init__(num_states, num_actions)
 
     def increment(self, state, action):
+
+        # HOMEWORK: Increment values for all (S, A) pairs by 1
         self.values += 1
+
+        # HOMEWORK: Except for the (state, action) pair, which is reset to 0 (use self.update with the right arguments)
         self.update(state, action, 0)
 
 
@@ -71,19 +75,19 @@ class DynaPlus(Dyna):
         super().reset()
 
         self.model = DynaPlusModel(self.env.action_space.n, self.random_seed)
-        self.time_since_last_encountered = TimeSinceLastEncountered((self.env.observation_space.n,),
-                                                                    self.env.action_space.n)
+        self.time_since_last_encountered = TimeSinceLastEncountered(
+            (self.env.observation_space.n,),
+            self.env.action_space.n
+        )
 
     def learn(self, num_episodes=500):
+
+        # HOMEWORK STARTS: Implement the Dyna-Q+ algorithm (~25-30 lines).
 
         for episode in range(num_episodes):
 
             # Initialise S (**a**)
             state, _ = self.env.reset()
-
-            # Initialise logging variables
-            episode_reward = 0
-            episode_steps = 0
 
             # Loop over each step of episode, until S is terminal
             done = False
@@ -96,7 +100,7 @@ class DynaPlus(Dyna):
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
 
                 # Update Q(S, A) (**d**)
-                td_target = reward + self.gamma * self.q_values.get(next_state, self.q_values.get_max_action(next_state))
+                td_target = reward + self.gamma * self.q_values.get(next_state, self.q_values.get_max_action(next_state))    # NoQA
                 td_error = td_target - self.q_values.get(state, action)
                 new_value = self.q_values.get(state, action) + self.alpha * td_error
                 self.q_values.update(state, action, new_value)
@@ -140,3 +144,5 @@ class DynaPlus(Dyna):
 
             # Update logs
             self.logger.log_episode()
+
+        # HOMEWORK ENDS
