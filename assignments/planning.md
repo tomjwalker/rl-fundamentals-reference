@@ -92,19 +92,21 @@ Environments:
 ![Description of Image](../images/planning/planning_step_sweep.png)
 
 *Standard planning-free Q-learning (blue). Increasing number of planning steps between each real timestep in the 
-real environment (real timesteps x-axis) leads to significantly-increased sample-efficiency*
+real environment (real timesteps x-axis) leads to significantly-increased sample-efficiency (--> green --> red)*
 
-### Dyna-Q+ vs Dyna-Q on non-stationary mazes
+### Dyna-Q+ vs Dyna-Q on Blocking Maze
 
 ![Description of Image](../images/planning/blocking_maze.png)
 
-*Standard planning-free Q-learning (blue). Increasing number of planning steps between each real timestep in the 
-real environment (real timesteps x-axis) leads to significantly-increased sample-efficiency*
+*Increased exploration behaviour of Dyna-Q+ outperforms that of Dyna-Q on the Blocking-maze even before environment 
+transition*
+
+### Dyna-Q+ vs Dyna-Q on Shortcut Maze
 
 ![Description of Image](../images/planning/shortcut_maze.png)
 
-*Standard planning-free Q-learning (blue). Increasing number of planning steps between each real timestep in the 
-real environment (real timesteps x-axis) leads to significantly-increased sample-efficiency*
+*Crucially, Dyna-Q+ finds the improved path to the goal after transition, while Dyna-Q stays stuck exploiting the 
+old path stored in its model*
 
 ---
 
