@@ -7,8 +7,7 @@ from rl.algorithms.temporal_difference.expected_sarsa import ExpectedSarsa
 from rl.algorithms.temporal_difference.sarsa import Sarsa
 from rl.simulation.trial import Trial
 from rl.environment.temporal_difference.cliff_walking_utils import visualise_q
-# from rl.environment.temporal_difference.cliff_walking_utils import visualise_state_visits    # Specific visualisation
-# function for cliff walking    # NoQA
+# from rl.environment.temporal_difference.cliff_walking_utils import visualise_state_visits    # Specific visualisation function for cliff walking    # NoQA
 import gymnasium as gym
 import numpy as np
 from matplotlib import pyplot as plt
