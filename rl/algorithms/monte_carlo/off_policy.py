@@ -57,10 +57,10 @@ class MCOffPolicy(MonteCarloAgent):
         """
         super().reset()
 
-        # Initialise target policy (deterministic)
+        # HOMEWORK: Initialise target policy (deterministic)
         self.policy = DeterministicPolicy(self.state_shape)
 
-        # Initialise behaviour policy (epsilon-greedy)
+        # HOMEWORK: Initialise behaviour policy (epsilon-greedy)
         self.behaviour_policy = EpsilonGreedyPolicy(self.epsilon, self.env.action_space.n)
 
     def act(self, state: Tuple[int, ...]) -> int:
@@ -73,7 +73,8 @@ class MCOffPolicy(MonteCarloAgent):
         Returns:
             int: The action selected by the behaviour policy.
         """
-        return self.behaviour_policy.select_action(state, self.q_values, ties="last")
+        # HOMEWORK: Select an action using the behaviour policy
+        return self.behaviour_policy.select_action(state, self.q_values)
 
     def _update_q_and_pi(self, episode: List[Tuple[Tuple[int, ...], int, float]]) -> None:
         """
@@ -90,31 +91,35 @@ class MCOffPolicy(MonteCarloAgent):
         # Starting from terminal state, work backwards through the episode
         for t, (state, action, reward) in enumerate(reversed(episode)):
 
-            # G <- gamma * G + R_t+1
+            # HOMEWORK: G <- gamma * G + R_t+1
             returns = self.gamma * returns + reward
+            #
+            # # Skip if the (state, action) pair has been seen before (first-visit MC)
+            # if self._is_subelement_present((state, action), episode[:len(episode) - t - 1]):
+            #     continue
 
-            # Skip if the (state, action) pair has been seen before (first-visit MC)
-            if self._is_subelement_present((state, action), episode[:len(episode) - t - 1]):
-                continue
+            # HOMEWORK: C(S_t, A_t) <- C(S_t, A_t) + W.
+            # Implement and use self.state_action_stats.update_importance_sampling
+            self.state_action_stats.update_importance_sampling(state, action, weights)  # Update C(S_t, A_t)
 
-            # C(S_t, A_t) <- C(S_t, A_t) + W
-            self.state_action_counts.update_importance_sampling(state, action, weights)  # Update C(S_t, A_t)
-
+            # HOMEWORK STARTS: (~3 lines of code) Update the q-values for this state-action pair.
             # Q(S_t, A_t) <- Q(S_t, A_t) + W / C(S_t, A_t) * (G - Q(S_t, A_t))
-            step_size = weights / self.state_action_counts.get(state, action)  # W / C(S_t, A_t)
-            new_value = self.q_values.get(state, action) + step_size * (returns - self.q_values.get(state, action))
+            step_size: float = weights / self.state_action_stats.get(state, action)  # W / C(S_t, A_t)
+            new_value: float = self.q_values.get(state, action) + step_size * (returns - self.q_values.get(state, action))  # NoQA
             self.q_values.update(state, action, new_value)  # Update Q(S_t, A_t)
+            # HOMEWORK ENDS
 
-            # Update the target policy (self.policy).
+            # HOMEWORK: Update the target policy (self.policy).
             # N.B. 1. Target policy `policy` is deterministic.
             #      2. Ties are broken consistently with "last".
             self.policy.update(state, self.q_values, ties="last")
 
-            # If chosen action is not the same as the target policy, break (inner) loop
+            # If chosen action is not the same as the target policy, break loop
             if action != self.policy.select_action(state):
                 break
 
-            # W <- W * 1 / b(A_t | S_t)
+            # HOMEWORK: W <- W * 1 / b(A_t | S_t)
+            # Implement and use self.behaviour_policy.compute_probs
             weights *= 1 / self.behaviour_policy.compute_probs(state, self.q_values)[action]
 
     def learn(self, num_episodes: int = 10000) -> None:

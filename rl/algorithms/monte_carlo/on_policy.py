@@ -111,8 +111,8 @@ class MCOnPolicy(MonteCarloAgent):
                 # Update the q-value for this state-action pair
                 # NewEstimate <- OldEstimate + 1/N(St, At) * (Return - OldEstimate)
                 mc_error: float = returns - self.q_values.get(state, action)
-                self.state_action_counts.update(state, action)  # Get N(St, At)
-                step_size: float = 1 / self.state_action_counts.get(state, action)
+                self.state_action_stats.update(state, action)  # Get N(St, At)
+                step_size: float = 1 / self.state_action_stats.get(state, action)
                 new_value: float = self.q_values.get(state, action) + step_size * mc_error
                 self.q_values.update(state, action, new_value)
             # HOMEWORK ENDS
