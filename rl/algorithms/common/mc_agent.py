@@ -5,23 +5,27 @@ import numpy as np
 from typing import Tuple
 
 
-class StateActionCounts:
+class StateActionStats:
     """
     Implements N(s, a) for Monte Carlo averaging:
         Q(s, a) <- Q(s, a) + 1/N(s, a) * (G - Q(s, a))
+    In case of off-policy learning, tracks cumulative sum of importance sampling ratios
+        C(s, a) <- C(s, a) + W
     """
 
     def __init__(self, state_space_shape: Tuple[int, ...], action_space_shape: int):
-        self.values = np.zeros(state_space_shape + (action_space_shape,))
+        self.stats = np.zeros(state_space_shape + (action_space_shape,))
 
     def get(self, state, action):
-        return self.values[state][action]
+        return self.stats[state][action]
 
     def update(self, state, action):
-        self.values[state][action] += 1
+        self.stats[state][action] += 1
 
     def update_importance_sampling(self, state, action, importance_sampling_ratio):
-        self.values[state][action] += importance_sampling_ratio
+        # HOMEWORK: Update the cumulative sum of importance sampling ratios
+        # C(s, a) <- C(s, a) + W
+        self.stats[state][action] += importance_sampling_ratio
 
 
 class MonteCarloAgent(BaseAgent):
@@ -40,7 +44,7 @@ class MonteCarloAgent(BaseAgent):
         self.policy = None
 
         self.returns = None
-        self.state_action_counts = None
+        self.state_action_stats = None
 
         # TODO: shift to an environment-specific method?
         # Get env shape
@@ -106,5 +110,5 @@ class MonteCarloAgent(BaseAgent):
     def reset(self):
 
         self.q_values = QValueTable(self.state_shape, self.env.action_space.n)
-        self.state_action_counts = StateActionCounts(self.state_shape, self.env.action_space.n)
+        self.state_action_stats = StateActionStats(self.state_shape, self.env.action_space.n)
         self.logger.reset()
