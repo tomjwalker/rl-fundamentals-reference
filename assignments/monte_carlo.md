@@ -1,24 +1,25 @@
-# Assignment: [Assignment Title]
+# Assignment: Monte Carlo methods
 
 ## Overview
 
-[Provide a brief overview of the assignment and its significance.]
+In this assignment, you will implement Monte Carlo methods for solving reinforcement learning problems.
+- You will implement Monte Carlo Exploring Starts, On-policy Monte Carlo Control, and Off-policy Monte Carlo Control.
+- You will work with the Blackjack environment, a classic example from Sutton and Barto's book.
+- Through this exercise, you will gain a deeper understanding of how Monte Carlo methods learn the optimal policy and value function for Markov Decision Processes (MDPs).
 
 ## Objectives
 
-- [Objective 1]
-- [Objective 2]
-- [Objective 3]
+- Implement Monte Carlo Exploring Starts.
+- Implement On-policy Monte Carlo Control.
+- Implement Off-policy Monte Carlo Control.
 
 ## Files to Work On
 
-- `[path/to/file1.py]`
-  - **Function to Implement:**
-    - `[function_name]`
-- `[path/to/file2.py]`
-  - **Method to Complete:**
-    - `[method_name]`
-
+- `[rl/algorithms/monte_carlo/exploring_starts.py]`
+- `[rl/algorithms/monte_carlo/on_policy.py]`
+- `[rl/algorithms/monte_carlo/off_policy.py]`
+- `[rl/common/policy.py]`
+- `[rl/algorithms/common/mc_agent.py]`
 ---
 
 ## Moving to Object-Oriented Programming (OOP)
