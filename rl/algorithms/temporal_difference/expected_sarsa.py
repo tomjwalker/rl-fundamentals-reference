@@ -12,6 +12,8 @@ class ExpectedSarsa(TemporalDifferenceAgent):
 
     def learn(self, num_episodes: int = 500) -> None:
 
+        # HOMEWORK BEGINS: Implement the Expected Sarsa algorithm (~14 lines). Refer to the Sarsa implementation.
+
         for episode in range(num_episodes):
 
             # Initialise S
@@ -49,3 +51,5 @@ class ExpectedSarsa(TemporalDifferenceAgent):
 
             # Add episode reward to list
             self.logger.log_episode()
+
+        # HOMEWORK ENDS
