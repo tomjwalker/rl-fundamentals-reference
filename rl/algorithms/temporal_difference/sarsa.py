@@ -14,33 +14,38 @@ class Sarsa(TemporalDifferenceAgent):
             # Initialise S
             state, _ = self.env.reset()
 
-            # Choose A from S using policy derived from Q (epsilon-greedy)
+            # HOMEWORK: Choose A from S using policy derived from Q (epsilon-greedy)
+            # N.B. Implement the act method in the TemporalDifferenceAgent superclass
             action = self.act(state)
 
             # Loop over each step of episode, until S is terminal
             done = False
             while not done:
 
-                # Take action A, observe R, S'
+                # HOMEWORK: Make a step of the environment; observe R, S'
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
 
-                # Choose A' from S' using policy derived from Q (epsilon-greedy)
+                # HOMEWORK: Choose A' from S' using policy derived from Q (epsilon-greedy)
                 next_action = self.act(next_state)
 
+                # HOMEWORK STARTS: (~3-4 lines).
                 # Update Q(S, A), taking as target the TD target (R + gamma * Q(S', A'))
+                # You ultimately want to update via self.q_values.update(...)
                 td_target = reward + self.gamma * self.q_values.get(next_state, next_action)
                 td_error = td_target - self.q_values.get(state, action)
                 new_value = self.q_values.get(state, action) + self.alpha * td_error
                 self.q_values.update(state, action, new_value)
+                # HOMEWORK ENDS
 
-                # S <- S', A <- A'
+                # HOMEWORK STARTS: S <- S', A <- A' (2 lines)
                 state = next_state
                 action = next_action
+                # HOMEWORK ENDS
 
-                # Add reward to episode reward
+                # HOMEWORK: Add reward to episode reward log (self.logger.log_timestep(...))
                 self.logger.log_timestep(reward)
 
-                # If S is terminal, then episode is done (exit loop)
+                # HOMEWORK: If S is terminal, then episode is done (will exit "while" loop)
                 done = terminated or truncated
 
             # Add episode reward to list
