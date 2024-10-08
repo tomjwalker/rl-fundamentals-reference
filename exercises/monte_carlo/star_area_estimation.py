@@ -1,114 +1,220 @@
+import argparse
 import matplotlib
 import matplotlib.pyplot as plt
-
 import random
 import math
-import numpy as np
+import sys
+from typing import List, Tuple
+
 matplotlib.use('TkAgg')
 
 
-def exact_pentagram_area(radius_of_enclosing_circle=1):
+def exact_pentagram_area(radius_of_enclosing_circle: float = 1) -> float:
+    """
+    Calculates the exact area of a regular pentagram inscribed in a circle.
 
-    d_pentagon_vertex_to_centre = radius_of_enclosing_circle / (math.sin(math.pi / 5) * math.tan(2 * math.pi / 5) +
-                                                                math.cos(math.pi / 5))
+    Args:
+        radius_of_enclosing_circle (float): The radius of the circle in which the pentagram is inscribed.
 
-    area_pentagon = 5 * (d_pentagon_vertex_to_centre ** 2) * math.sin(math.pi / 5) * math.cos(math.pi / 5)
+    Returns:
+        float: The exact area of the pentagram.
+    """
+    d = radius_of_enclosing_circle / (
+        math.sin(math.pi / 5) * math.tan(2 * math.pi / 5) + math.cos(math.pi / 5)
+    )
 
-    area_stellation = (d_pentagon_vertex_to_centre ** 2) * (math.sin(math.pi / 5) ** 2) * math.tan(2 * math.pi / 5)
+    area_pentagon = (
+        5 * (d ** 2) * math.sin(math.pi / 5) * math.cos(math.pi / 5)
+    )
+
+    area_stellation = (
+        (d ** 2) * (math.sin(math.pi / 5) ** 2) * math.tan(2 * math.pi / 5)
+    )
 
     return area_pentagon + 5 * area_stellation
 
 
-def complex_cross_product(z1, z2):
-    """Calculates an analog to the cross product for complex numbers in 2D.
+def complex_cross_product(z1: complex, z2: complex) -> float:
+    """
+    Calculates an analog to the cross product for complex numbers in 2D.
 
     Args:
-        z1: A complex number representing a 2D vector.
-        z2: Another complex number representing a 2D vector.
+        z1 (complex): A complex number representing a 2D vector.
+        z2 (complex): Another complex number representing a 2D vector.
 
     Returns:
-        A real number representing the signed area of the parallelogram 
-        formed by z1 and z2. Positive indicates z2 is to the left of z1, 
-        negative implies z2 is to the right.
+        float: A real number representing the signed area of the parallelogram
+            formed by z1 and z2. Positive indicates z2 is to the left of z1,
+            negative implies z2 is to the right.
     """
     return (z1.real * z2.imag) - (z1.imag * z2.real)
 
 
-def is_inside_pentagram(x, y):
-    """Checks if a point (x, y) is inside a regular pentagram inscribed in a unit circle."""
+def is_inside_pentagram(x: float, y: float) -> bool:
+    """
+    Checks if a point (x, y) is inside a regular pentagram inscribed in a unit circle.
 
-    # Calculate vertices of the pentagram (complex number math is helpful here)
-    vertices = [math.cos(2 * math.pi * i / 5) + 1j * math.sin(2 * math.pi * i / 5)
-                for i in range(5)]
+    Args:
+        x (float): The x-coordinate of the point.
+        y (float): The y-coordinate of the point.
 
-    # Case 1: is inside pentagram if it is inside the inner pentagon. This is true if point is to the left of all
-    # segments of the pentagram
-    cross_products = []
+    Returns:
+        bool: True if the point is inside the pentagram, False otherwise.
+    """
+    # Calculate vertices of the pentagram
+    vertices: List[complex] = [
+        math.cos(2 * math.pi * i / 5) + 1j * math.sin(2 * math.pi * i / 5)
+        for i in range(5)
+    ]
+
+    # Check if the point is inside the pentagram
+    cross_products: List[float] = []
     for i in range(5):
-        v1 = vertices[i]
-        # For a pentagram, the next vertex is 2 vertices away
-        v2 = vertices[(i + 2) % 5]    # Wrap around to the start if needed
+        v1: complex = vertices[i]
+        v2: complex = vertices[(i + 2) % 5]  # Next vertex for pentagram edges
 
-        # Use cross product to determine if the point is on the correct side of the edge (if cross product is positive,
-        # point is on the left)
-        segment = v2 - v1
-        point = (x + 1j * y) - v1
-        cross_product = complex_cross_product(segment, point)
+        segment: complex = v2 - v1
+        point: complex = (x + 1j * y) - v1
+        cross_product: float = complex_cross_product(segment, point)
         cross_products.append(cross_product)
 
-    if all(cross_product > 0 for cross_product in cross_products):
+    # Case 1: Inside the inner pentagon
+    if all(cp > 0 for cp in cross_products):
         return True
 
-    # Case 2: For the stellations, the point can still be inside if it is to the right of a given segment but to the
-    # left of neighbouring segments on either side.
-
-    # Already have the cross products for the pentagram, so just need to check the stellations
+    # Case 2: Inside the stellations
     for i in range(5):
         if cross_products[i] < 0:
-            # Check if point is to the left of both neighbouring segments
             if cross_products[(i + 1) % 5] > 0 and cross_products[(i - 1) % 5] > 0:
                 return True
 
     return False
 
 
-# Monte Carlo Simulation
-num_samples = 10000  # Adjust for desired accuracy
-inside_count = 0
-log = []
-exact_area = exact_pentagram_area(radius_of_enclosing_circle=1)
-area_estimates = []
-area_square = 2 ** 2
-for num_samples_intermediate in range(num_samples):
-    x = random.uniform(-1, 1)
-    y = random.uniform(-1, 1)
+def monte_carlo_pentagram_area(
+    num_samples: int = 10000
+) -> Tuple[float, List[float], List[Tuple[Tuple[float, float], bool]]]:
+    """
+    Estimates the area of a pentagram using the Monte Carlo method.
 
-    if is_inside_pentagram(x, y):
-        inside_count += 1
+    Args:
+        num_samples (int): The number of random samples to use in the simulation.
 
-    log.append([(x, y), is_inside_pentagram(x, y)])
+    Returns:
+        Tuple[float, List[float], List[Tuple[Tuple[float, float], bool]]]:
+            - The final estimated area.
+            - A list of area estimates over iterations.
+            - A log of sampled points and their inclusion status.
+    """
+    inside_count: int = 0
+    log: List[Tuple[Tuple[float, float], bool]] = []
+    area_estimates: List[float] = []
+    # HOMEWORK: input the area of the square bounding the unit circle (i.e. whose radius is 1)
+    area_square: float = 4.0  # Area of the square bounding the unit circle
 
-    area_estimate = (inside_count / (num_samples_intermediate + 1)) * area_square
-    area_estimates.append(area_estimate)
+    # Sample points within the square bounding the unit circle
+    for num in range(num_samples):
+        x: float = random.uniform(-1, 1)
+        y: float = random.uniform(-1, 1)
 
-print("Final estimated area of pentagram:", area_estimate)
+        # HOMEWORK: use the helper function to check if the point is inside the pentagram
+        inside: bool = is_inside_pentagram(x, y)
 
-# Plotting
+        # HOMEWORK STARTS: if the point is inside the pentagram, increment the inside_count (1-2 lines)
+        if inside:
+            inside_count += 1
+        # HOMEWORK ENDS
 
-fig, ax = plt.subplots(1, 2)
+        log.append(((x, y), inside))
 
-ax[0].plot(range(num_samples), area_estimates, color="blue")
+        # HOMEWORK: Area estimate is the ratio of points inside the pentagram to the total points sampled
+        # N.B. `num` is 0-indexed, so we add 1 to the denominator to avoid division by zero
+        # N.B., needs to be multiplied by the area of the square bounding the unit circle
+        area_estimate: float = (inside_count / (num + 1)) * area_square
 
-# Add a horizontal line for the exact area
-ax[0].axhline(y=exact_area, color="black", linestyle="--")
+        # HOMEWORK: append current area estimate to list of area estimates (this will provide a history of estimates)
+        area_estimates.append(area_estimate)
 
-# Display final estimate (to 3sf) alongside the exact value in the axis title
-ax[0].set_title(f"Estimated Area: {area_estimate:.3f} (Exact: {exact_area:.3f})")
+    final_estimate: float = area_estimates[-1]
+    return final_estimate, area_estimates, log
 
-colors = ["#22a884" if inside else "#c6c6c6" for (point, inside) in log]
-ax[1].scatter([point[0] for (point, inside) in log], [point[1] for (point, inside) in log], color=colors, alpha=0.5)
 
-# Make axis 1 axes equal
-ax[1].set_aspect('equal', adjustable='datalim')
+def plot_results(
+    num_samples: int,
+    area_estimates: List[float],
+    exact_area: float,
+    log: List[Tuple[Tuple[float, float], bool]],
+):
+    """
+    Plots the convergence of the estimated area and the scatter plot of sampled points.
 
-plt.show()
+    Args:
+        num_samples (int): The number of samples used in the simulation.
+        area_estimates (List[float]): The list of area estimates over iterations.
+        exact_area (float): The exact area of the pentagram.
+        log (List[Tuple[Tuple[float, float], bool]]): The log containing sampled points and their status.
+    """
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+
+    # Plot convergence of area estimates
+    ax[0].plot(range(num_samples), area_estimates, color="blue", label="Estimated Area")
+    ax[0].axhline(y=exact_area, color="black", linestyle="--", label="Exact Area")
+    ax[0].set_xlabel("Number of Samples")
+    ax[0].set_ylabel("Estimated Area")
+    ax[0].set_title(
+        f"MC Estimation (exact area: {round(exact_area, 3)}, final est: {round(area_estimates[-1], 3)})"
+    )
+    ax[0].legend()
+
+    # Plot scatter of sampled points
+    colors = ["#22a884" if inside else "#c6c6c6" for (_, inside) in log]
+    x_coords = [point[0] for (point, _) in log]
+    y_coords = [point[1] for (point, _) in log]
+    ax[1].scatter(x_coords, y_coords, color=colors, alpha=0.5, s=4)
+    ax[1].set_aspect('equal', adjustable='datalim')
+    ax[1].set_title("Monte Carlo Sampling of the Pentagram")
+    ax[1].set_xlabel("x")
+    ax[1].set_ylabel("y")
+
+    plt.tight_layout()
+    plt.show()
+
+
+def main():
+    """
+    Main function to run the Monte Carlo simulation and plot the results.
+    """
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Estimate the area of a pentagram using the Monte Carlo method."
+    )
+    parser.add_argument(
+        '--num_samples',
+        type=int,
+        default=10000,
+        help='Number of random samples to use in the simulation (default: 10000)'
+    )
+    args = parser.parse_args()
+
+    # Validate num_samples
+    if args.num_samples <= 0:
+        print("Error: Number of samples must be a positive integer.", file=sys.stderr)
+        sys.exit(1)
+
+    num_samples: int = args.num_samples
+
+    # Calculate the exact area
+    exact_area: float = exact_pentagram_area()
+
+    # Run the Monte Carlo simulation
+    final_estimate, area_estimates, log = monte_carlo_pentagram_area(num_samples)
+
+    print(f"Final estimated area of pentagram: {final_estimate:.6f}")
+    print(f"Exact area of pentagram: {exact_area:.6f}")
+
+    # Plot the results
+    plot_results(num_samples, area_estimates, exact_area, log)
+
+
+if __name__ == "__main__":
+    main()

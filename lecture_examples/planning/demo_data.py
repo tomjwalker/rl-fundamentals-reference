@@ -30,6 +30,3 @@ tau = np.array([
     [7, 7, 7, 7],
     [7, 0, 7, 7],
 ])
-
-
-q = np.zeros_like()
