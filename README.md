@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="Logo" height="40" src="./images/general/logo.png" style="vertical-align:middle; margin-right: 10px;">
+    <img alt="Logo" height="70" src="./images/general/logo.png" style="vertical-align:middle; margin-right: 10px;">
 </p>
 
 # RL Fundamentals
