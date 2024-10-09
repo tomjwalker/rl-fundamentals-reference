@@ -1,6 +1,19 @@
-# RL Fundamentals Course Repository
+<p>
+    <img alt="Logo" height="50" src="./images/general/logo_dark.png" style="vertical-align:middle; margin-right: 
+10px;" id="logo">
+    <span style="font-size:2em; font-weight:bold;">RL Fundamentals</span>
+</p>
 
-Welcome to the RL Fundamentals Course! This repository contains all the materials, assignments, and examples you'll need to master Reinforcement Learning concepts.
+<style>
+  @media (prefers-color-scheme: light) {
+    #logo {
+      content: url('./images/general/logo_light.png');
+    }
+  }
+</style>
+
+Welcome to the RL Fundamentals course! This repository contains all the materials, assignments, and examples you'll 
+need to master Reinforcement Learning concepts.
 
 ## Repository Structure
 
