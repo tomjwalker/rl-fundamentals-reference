@@ -31,23 +31,23 @@ documentation, and copies essential files to the student repository.
    - Non-assignment lines that are marked for redaction are replaced with a `# TODO` comment.
 
 **Usage**:
-    python utils/prepare_student_repo.py <input_dir> <output_dir> --dirs <dir1> <dir2> ...
+    python utils/prepare_student_repo.py <input_dir> <output_dir> [--dirs <dir1> <dir2> ...]
 
 **Example**:
-    python utils/prepare_student_repo.py . ../rl-fundamentals-assignments --dirs rl exercises
+    python utils/prepare_student_repo.py . ../rl-fundamentals-assignments
 
 **Arguments**:
     input_dir     Path to the input directory (reference repository).
     output_dir    Path to the output directory (student repository).
-    --dirs        One or more directories within the input directory to process (e.g., rl exercises).
+    --dirs        (Optional) One or more directories within the input directory to process. Defaults to ['rl', 'exercises', 'assignments', 'images'].
 
 **Notes**:
     - The script processes Python files (.py) by redacting code sections based on the markers.
-    - It copies README.md and .gitignore files without modification.
+    - It copies other files (e.g., .md, .png, .jpg) in the specified directories without modification.
+    - It copies the root README.md and .gitignore files without modification.
     - A requirements.txt file is generated based on the input directory's dependencies.
-    - A main README.md is created in the output directory with introductory content.
 
-This script courtesy of o1-preview ;) (cheers mate!)
+Generated with the help of o1-preview!
 """
 
 import os
@@ -100,7 +100,6 @@ def process_file(input_path: str, output_path: str) -> None:
 
     processed_lines = []
     i = 0
-    skip_block = False
     while i < len(lines):
         line = lines[i]
         stripped_line = line.strip()
@@ -199,18 +198,18 @@ def process_directory(input_dir: str, output_dir: str, dirs_to_process: list) ->
             continue
 
         for file in files:
-            if file.endswith('.py'):
-                input_path = os.path.join(root, file)
-                relative_path = os.path.relpath(input_path, input_dir)
-                output_path = os.path.join(output_dir, relative_path)
+            input_path = os.path.join(root, file)
+            relative_path = os.path.relpath(input_path, input_dir)
+            output_path = os.path.join(output_dir, relative_path)
+            destination_dir = os.path.dirname(output_path)
+            os.makedirs(destination_dir, exist_ok=True)
 
+            if file.endswith('.py'):
+                # Process Python files
                 process_file(input_path, output_path)
-            elif file in ['README.md', '.gitignore']:
-                # Copy these files without processing
-                source_file = os.path.join(root, file)
-                destination_dir = os.path.join(output_dir, rel_dir)
-                os.makedirs(destination_dir, exist_ok=True)
-                shutil.copy2(source_file, os.path.join(destination_dir, file))
+            else:
+                # Copy other files without processing
+                shutil.copy2(input_path, output_path)
 
 
 def create_requirements_txt(input_dir: str, output_dir: str) -> None:
@@ -231,20 +230,18 @@ def create_requirements_txt(input_dir: str, output_dir: str) -> None:
     os.system(f"pipreqs {input_dir} --force --savepath {os.path.join(output_dir, 'requirements.txt')}")
 
 
-def create_main_readme(output_dir: str) -> None:
+def copy_root_files(input_dir: str, output_dir: str) -> None:
     """
-    Create a main README.md file in the output directory with introductory content.
+    Copy root-level files like README.md and .gitignore to the output directory.
 
     Args:
-        output_dir (str): The path to the output directory (student repository).
+        input_dir (str): The path to the input directory.
+        output_dir (str): The path to the output directory.
     """
-    readme_path = os.path.join(output_dir, 'README.md')
-    with open(readme_path, 'w', encoding='utf-8') as f:
-        f.write("# RL Course Exercises\n\n")
-        f.write(
-            "Welcome to the RL course exercises. Please refer to individual exercise directories for specific "
-            "instructions.\n"
-        )
+    for file_name in ['README.md', '.gitignore']:
+        source_file = os.path.join(input_dir, file_name)
+        if os.path.isfile(source_file):
+            shutil.copy2(source_file, os.path.join(output_dir, file_name))
 
 
 def main() -> None:
@@ -267,8 +264,8 @@ def main() -> None:
     parser.add_argument(
         "--dirs",
         nargs='+',
-        required=True,
-        help="One or more directories within the input directory to process (e.g., rl exercises).",
+        default=['rl', 'exercises', 'assignments', 'images'],
+        help="One or more directories within the input directory to process. Defaults to ['rl', 'exercises', 'assignments', 'images'].",
     )
     args = parser.parse_args()
 
@@ -280,6 +277,10 @@ def main() -> None:
     # Create output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
 
+    # Copy root-level files like README.md and .gitignore
+    print("Copying root-level files...")
+    copy_root_files(args.input_dir, args.output_dir)
+
     # Process the specified directories
     print("Processing specified directories...")
     process_directory(args.input_dir, args.output_dir, args.dirs)
@@ -287,10 +288,6 @@ def main() -> None:
     # Create requirements.txt
     print("Generating requirements.txt...")
     create_requirements_txt(args.input_dir, args.output_dir)
-
-    # Create a main README.md in the output directory
-    print("Creating main README.md...")
-    create_main_readme(args.output_dir)
 
     print("Processing complete. Student repository created successfully.")
 
