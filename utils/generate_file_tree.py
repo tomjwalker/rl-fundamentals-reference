@@ -24,7 +24,7 @@ import argparse
 from pathlib import Path
 
 # Default exclusions
-DEFAULT_EXCLUDE_DIRS = {'.git', '__pycache__', '.data', 'venv'}
+DEFAULT_EXCLUDE_DIRS = {'.git', '__pycache__', '.data', 'venv', 'videos', 'stitched_videos'}
 DEFAULT_EXCLUDE_EXTENSIONS = {'.pyc', '.pyd'}
 
 

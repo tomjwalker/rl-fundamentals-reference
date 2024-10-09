@@ -6,24 +6,48 @@ A script to prepare a student repository by processing reference reinforcement l
 scripts. It redacts specific sections marked for homework assignments, retains necessary
 documentation, and copies essential files to the student repository.
 
-Usage:
+**Redaction Logic**:
+
+1. **HOMEWORK Markers**:
+   - **Single-line Redaction**:
+     - Lines starting with `# HOMEWORK:` followed by comments.
+     - The following code line is redacted:
+       - If it's an assignment (`LHS = RHS` or `LHS += RHS`), the RHS is replaced with a placeholder.
+       - If it's a method call or other statement, it's replaced with a `# TODO` comment.
+   - **Block Redaction**:
+     - Blocks between `# HOMEWORK START` and `# HOMEWORK END` are replaced with a placeholder line.
+
+2. **ASSIGNMENT and SOLUTION Markers**:
+   - **ASSIGNMENT Blocks**:
+     - Code between `# ASSIGNMENT START` and `# ASSIGNMENT END` is retained.
+   - **SOLUTION Blocks**:
+     - Entirely removed from the student version, including the marker comments.
+
+3. **Augmented Assignments**:
+   - Handles operators like `+=`, `-=`, `*=`, `/=`, `//=`, `%=`, `**=`, `&=`, `|=`, `^=`, `>>=`, `<<=`, `@=`.
+   - Redacts the RHS while keeping the operator intact.
+
+4. **Other Statements**:
+   - Non-assignment lines that are marked for redaction are replaced with a `# TODO` comment.
+
+**Usage**:
     python utils/prepare_student_repo.py <input_dir> <output_dir> --dirs <dir1> <dir2> ...
 
-Example:
+**Example**:
     python utils/prepare_student_repo.py . ../rl-fundamentals-assignments --dirs rl exercises
 
-Arguments:
+**Arguments**:
     input_dir     Path to the input directory (reference repository).
     output_dir    Path to the output directory (student repository).
     --dirs        One or more directories within the input directory to process (e.g., rl exercises).
 
-Notes:
-    - The script processes Python files (.py) by redacting code sections between homework markers.
+**Notes**:
+    - The script processes Python files (.py) by redacting code sections based on the markers.
     - It copies README.md and .gitignore files without modification.
     - A requirements.txt file is generated based on the input directory's dependencies.
     - A main README.md is created in the output directory with introductory content.
 
-Generated with the help of o1-preview!
+This script courtesy of o1-preview ;) (cheers mate!)
 """
 
 import os
@@ -44,14 +68,18 @@ def process_code_line(line: str) -> str:
         str: The redacted line with placeholders for student implementation.
     """
     stripped_line = line.rstrip('\n')
-    # Adjusted regex to handle optional type annotations
-    assignment_match = re.match(r'^(\s*)([\w,\s]+)(\s*:\s*[\w\[\],\s]+)?\s*=\s*(.*)', stripped_line)
+    # Adjusted regex to handle optional type annotations and augmented assignments
+    assignment_match = re.match(
+        r'^(\s*)([\w,\s]+)(\s*:\s*[\w\[\],\s]+)?\s*([+\-*/%@&|^]=|//=|>>=|<<=|@=|=)\s*(.*)',
+        stripped_line
+    )
     if assignment_match:
         indent = assignment_match.group(1)
         lhs = assignment_match.group(2)
         type_annotation = assignment_match.group(3) or ''
-        # Retain indentation, LHS, and type annotation
-        return f"{indent}{lhs}{type_annotation} = None  # TODO: Implement this assignment\n"
+        operator = assignment_match.group(4)
+        # Retain indentation, LHS, operator, and type annotation
+        return f"{indent}{lhs}{type_annotation} {operator} None  # TODO: Implement this assignment\n"
     else:
         # Handle non-assignment lines
         indent_match = re.match(r'^(\s*)', stripped_line)
@@ -61,7 +89,7 @@ def process_code_line(line: str) -> str:
 
 def process_file(input_path: str, output_path: str) -> None:
     """
-    Process a single Python file by redacting homework sections and copying necessary content.
+    Process a single Python file by redacting homework and solution sections and copying necessary content.
 
     Args:
         input_path (str): The path to the original Python file.
@@ -72,15 +100,45 @@ def process_file(input_path: str, output_path: str) -> None:
 
     processed_lines = []
     i = 0
+    skip_block = False
     while i < len(lines):
         line = lines[i]
         stripped_line = line.strip()
 
-        if stripped_line.startswith("# TODO"):
-            # Skip personal TODO comments
+        # Skip personal TODO comments
+        if stripped_line.startswith("# TODO") and not any(
+            tag in stripped_line for tag in ["# TODO: Implement", "# TODO: Implement this assignment"]
+        ):
             i += 1
             continue
 
+        # Handle SOLUTION blocks
+        elif any(stripped_line.startswith(tag) for tag in ["# SOLUTION START", "# SOLUTION BEGINS"]):
+            # Skip all lines until SOLUTION END
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("# SOLUTION END"):
+                i += 1
+            # Skip the SOLUTION END line
+            if i < len(lines):
+                i += 1
+            continue
+
+        # Handle ASSIGNMENT blocks
+        elif any(stripped_line.startswith(tag) for tag in ["# ASSIGNMENT START", "# ASSIGNMENT BEGINS"]):
+            # Retain the ASSIGNMENT START line
+            processed_lines.append(line)
+            i += 1
+            # Retain all lines until ASSIGNMENT END
+            while i < len(lines) and not lines[i].strip().startswith("# ASSIGNMENT END"):
+                processed_lines.append(lines[i])
+                i += 1
+            # Retain the ASSIGNMENT END line
+            if i < len(lines):
+                processed_lines.append(lines[i])
+                i += 1
+            continue
+
+        # Handle HOMEWORK markers
         elif any(stripped_line.startswith(tag) for tag in ["# HOMEWORK:", "# HOMEWORK BEGINS:", "# HOMEWORK START:"]):
             # Retain all consecutive comment lines related to homework
             while i < len(lines) and lines[i].strip().startswith("#"):
@@ -88,7 +146,7 @@ def process_file(input_path: str, output_path: str) -> None:
                 i += 1
 
             # Handle single-line homework redaction
-            if stripped_line.startswith("# HOMEWORK:"):
+            if "HOMEWORK:" in stripped_line:
                 if i < len(lines):
                     code_line = lines[i]
                     redacted_line = process_code_line(code_line)
@@ -102,12 +160,16 @@ def process_file(input_path: str, output_path: str) -> None:
                 # Add a placeholder for multi-line homework sections
                 processed_lines.append(f"{indent}pass  # TODO: Implement this section\n")
                 # Skip lines until the end of the homework block
-                while i < len(lines) and not any(lines[i].strip().startswith(tag) for tag in ["# HOMEWORK ENDS", "# HOMEWORK END"]):
+                while i < len(lines) and not any(
+                    lines[i].strip().startswith(tag) for tag in ["# HOMEWORK ENDS", "# HOMEWORK END"]
+                ):
                     i += 1
                 # Retain the end marker of the homework block
                 if i < len(lines):
                     processed_lines.append(lines[i])
                     i += 1
+            continue
+
         else:
             # Regular line, add without modification
             processed_lines.append(line)
@@ -133,7 +195,7 @@ def process_directory(input_dir: str, output_dir: str, dirs_to_process: list) ->
         rel_dir = os.path.relpath(root, input_dir)
 
         # Skip directories not in dirs_to_process
-        if dirs_to_process and not any(rel_dir.startswith(d) for d in dirs_to_process):
+        if dirs_to_process and not any(rel_dir == d or rel_dir.startswith(d + os.sep) for d in dirs_to_process):
             continue
 
         for file in files:
@@ -180,7 +242,8 @@ def create_main_readme(output_dir: str) -> None:
     with open(readme_path, 'w', encoding='utf-8') as f:
         f.write("# RL Course Exercises\n\n")
         f.write(
-            "Welcome to the RL course exercises. Please refer to individual exercise directories for specific instructions.\n"
+            "Welcome to the RL course exercises. Please refer to individual exercise directories for specific "
+            "instructions.\n"
         )
 
 
@@ -189,7 +252,7 @@ def main() -> None:
     The main function to parse command-line arguments and initiate the processing of the repository.
     """
     parser = argparse.ArgumentParser(
-        description="Process RL course files for student distribution by redacting homework sections."
+        description="Process RL course files for student distribution by redacting homework and solution sections."
     )
     parser.add_argument(
         "input_dir",
