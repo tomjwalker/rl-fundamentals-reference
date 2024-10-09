@@ -1,9 +1,8 @@
-<p>
-    <img alt="Logo" height="50" src="./images/general/logo.png" style="vertical-align:middle; margin-right: 
-10px;" id="logo">
-    <span style="font-size:2em; font-weight:bold;">RL Fundamentals</span>
+<p align="center">
+    <img alt="Logo" height="40" src="./images/general/logo.png" style="vertical-align:middle; margin-right: 10px;">
 </p>
 
+# RL Fundamentals
 Welcome to the RL Fundamentals course! This repository contains all the materials, assignments, and examples you'll 
 need to master Reinforcement Learning concepts.
 
