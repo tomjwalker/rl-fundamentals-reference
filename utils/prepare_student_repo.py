@@ -227,8 +227,8 @@ def process_lines_advanced(lines):
         line = lines[i]
         stripped_line = line.strip()
 
-        # Detect function or method definition
-        func_match = re.match(r'^(\s*)def\s+\w+\s*\(.*\)\s*:', line)
+        # Detect function or method definition, accounting for return type annotations
+        func_match = re.match(r'^(\s*)def\s+\w+\s*\(.*\)\s*(->\s*[\w\[\],\s\.]+)?\s*:', line)
         if func_match:
             indent_level = len(func_match.group(1))
             start_line = i
@@ -265,13 +265,42 @@ def process_lines_advanced(lines):
             start_line, end_line, should_redact = function_ranges[function_index]
             function_index += 1
             if should_redact:
-                # Redact the entire function
+                # Redact the entire function but retain the docstring
                 func_def_line = lines[start_line]
-                func_match = re.match(r'^(\s*)def\s+(\w+)\s*\(.*\)\s*:', func_def_line)
+                func_match = re.match(r'^(\s*)def\s+(\w+)\s*\(.*\)\s*(->\s*[\w\[\],\s\.]+)?\s*:', func_def_line)
                 indent = func_match.group(1)
                 func_name = func_match.group(2)
-                placeholder = f"{indent}def {func_name}(*args, **kwargs):\n{indent}    pass  # TODO: Implement this function\n"
+                params = func_def_line[func_def_line.find('('):func_def_line.rfind(')')+1]
+                return_annotation = func_match.group(3) if func_match.group(3) else ''
+                # Extract the docstring if present
+                func_body_lines = lines[start_line+1:end_line]
+                docstring_lines = []
+                if func_body_lines:
+                    first_body_line = func_body_lines[0]
+                    first_body_line_stripped = first_body_line.strip()
+                    if first_body_line_stripped.startswith(('"""', "'''")):
+                        # Start of docstring
+                        docstring_lines.append(first_body_line)
+                        j = 1
+                        while j < len(func_body_lines):
+                            line = func_body_lines[j]
+                            docstring_lines.append(line)
+                            if line.strip().endswith(('"""', "'''")) and len(line.strip()) > 3:
+                                break
+                            elif line.strip() in ('"""', "'''"):
+                                break
+                            j += 1
+                # Build the placeholder function
+                placeholder = f"{indent}def {func_name}{params}{return_annotation}:\n"
+                if docstring_lines:
+                    # Add docstring lines as is
+                    for doc_line in docstring_lines:
+                        placeholder += doc_line
+                placeholder += f"{indent}    pass  # TODO: Implement this function\n"
+                # Add the placeholder to processed_lines
                 processed_lines.append(placeholder)
+                # Add two blank lines after the function
+                processed_lines.append('\n\n')
                 i = end_line  # Skip to the end of the function
             else:
                 # Keep the function as is
@@ -284,6 +313,7 @@ def process_lines_advanced(lines):
             i += 1
 
     return processed_lines
+
 
 def process_directory(input_dir: str, output_dir: str, dirs_to_process: list, mode: str = 'beginner') -> None:
     """
