@@ -1,7 +1,3 @@
-<p align="center">
-    <img alt="Logo" height="70" src="./images/general/logo.png" style="vertical-align:middle; margin-right: 10px;">
-</p>
-
 # RL fundamentals
 Welcome to the RL Fundamentals course! This repository contains all the materials, assignments, and examples you'll 
 need to master Reinforcement Learning concepts.
@@ -47,14 +43,44 @@ need to master Reinforcement Learning concepts.
     cd rl-fundamentals-assignments
     ```
 
-3. **Explore Assignments:**
+3. **Create a Virtual Environment:**
+
+    Make sure you have Python installed. Then, create a virtual environment:
+
+    ```bash
+    python -m venv venv
+    ```
+
+4. **Activate the Virtual Environment:**
+
+    - On **Windows**:
+
+      ```bash
+      venv\Scripts\activate
+      ```
+
+    - On **macOS/Linux**:
+
+      ```bash
+      source venv/bin/activate
+      ```
+
+5. **Install the Required Packages:**
+
+    Once the virtual environment is activated, run:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+6. **Explore Assignments:**
 
     Each assignment has its own markdown file within the `assignments/` directory. Navigate to the desired assignment folder and follow the guidelines to complete the tasks.
 
 ## Additional resources
 
 - **Books:**
-  - Sutton, R. S., & Barto, A. G. (2018). *Reinforcement Learning: An Introduction* (Second Edition).
+  - The Bible! Sutton, R. S., & Barto, A. G. (2018). *Reinforcement Learning: An Introduction* (Second Edition).
 
 - **Documentation:**
   - [Gymnasium Documentation](https://gymnasium.farama.org/)
