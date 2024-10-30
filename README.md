@@ -81,6 +81,8 @@ need to master Reinforcement Learning concepts.
 
 - **Books:**
   - The Bible! Sutton, R. S., & Barto, A. G. (2018). *Reinforcement Learning: An Introduction* (Second Edition).
+  - Most of the environments encountered in this course originate from this amazing and seminal book (e.g. Jack's Car Hire), and it has informed luminaries from Demis Hassabis and David Silver at DeepMind to Andrew Ng and Yann LeCun.
+  - If you are enjoying this course, I would encourage you to buy *Reinforcement Learning: An Introduction* as it is well worth the investment.
 
 - **Documentation:**
   - [Gymnasium Documentation](https://gymnasium.farama.org/)
