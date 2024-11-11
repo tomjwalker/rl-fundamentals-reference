@@ -79,27 +79,27 @@ need to master Reinforcement Learning concepts.
   
     1. ***Temporary Solution:***
     
-      Windows:
-      
-      Open a terminal in the main directory of the course project (where the rl folder is located).
-      
-      Run the following command:
-      
-      ```set PYTHONPATH=%PYTHONPATH%;%CD%```
-      
-      Mac/Linux:
-      
-      In a terminal, navigate to the project's main directory (where the rl folder is located).
-      
-      Run the following command:
-      
-      ```export PYTHONPATH="${PYTHONPATH}:$(pwd)"```
+        Windows:
+        
+        Open a terminal in the main directory of the course project (where the rl folder is located).
+        
+        Run the following command:
+        
+        ```set PYTHONPATH=%PYTHONPATH%;%CD%```
+        
+        Mac/Linux:
+        
+        In a terminal, navigate to the project's main directory (where the rl folder is located).
+        
+        Run the following command:
+        
+        ```export PYTHONPATH="${PYTHONPATH}:$(pwd)"```
     
     2. ***Permanent Solution:***
       
-      Windows: Add the directory path to your system environment variables in "System Properties" -> "Environment Variables".
-      
-      Mac/Linux: Add the export `PYTHONPATH="${PYTHONPATH}:$(pwd)"` line to your shell configuration file (e.g., .bashrc, .zshrc). This will ensure that the path is set every time you open a terminal.
+        Windows: Add the directory path to your system environment variables in "System Properties" -> "Environment Variables".
+        
+        Mac/Linux: Add the export `PYTHONPATH="${PYTHONPATH}:$(pwd)"` line to your shell configuration file (e.g., .bashrc, .zshrc). This will ensure that the path is set every time you open a terminal.
 
 7. **Explore Assignments:**
 
