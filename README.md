@@ -77,7 +77,7 @@ need to master Reinforcement Learning concepts.
 
   If you encounter an error like ModuleNotFoundError: No module named 'rl', it is likely that the rl folder is not part of your Python path. To resolve this, you can add the project directory to your Python path:
   
-  a. ***Temporary Solution:***
+  1. ***Temporary Solution:***
   
     Windows:
     
@@ -85,7 +85,7 @@ need to master Reinforcement Learning concepts.
     
     Run the following command:
     
-    set PYTHONPATH=%PYTHONPATH%;%CD%
+    ```set PYTHONPATH=%PYTHONPATH%;%CD%```
     
     Mac/Linux:
     
@@ -93,13 +93,13 @@ need to master Reinforcement Learning concepts.
     
     Run the following command:
     
-    export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+    ```export PYTHONPATH="${PYTHONPATH}:$(pwd)"```
   
-  b. ***Permanent Solution:***
+  2. ***Permanent Solution:***
     
     Windows: Add the directory path to your system environment variables in "System Properties" -> "Environment Variables".
     
-    Mac/Linux: Add the export PYTHONPATH="${PYTHONPATH}:$(pwd)" line to your shell configuration file (e.g., .bashrc, .zshrc). This will ensure that the path is set every time you open a terminal.
+    Mac/Linux: Add the export `PYTHONPATH="${PYTHONPATH}:$(pwd)"` line to your shell configuration file (e.g., .bashrc, .zshrc). This will ensure that the path is set every time you open a terminal.
 
 7. **Explore Assignments:**
 
