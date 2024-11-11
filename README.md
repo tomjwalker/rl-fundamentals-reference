@@ -75,31 +75,31 @@ need to master Reinforcement Learning concepts.
 
 6. **Add the Project Directory to PYTHONPATH:**
 
-  If you encounter an error like ModuleNotFoundError: No module named 'rl', it is likely that the rl folder is not part of your Python path. To resolve this, you can add the project directory to your Python path:
+    If you encounter an error like ModuleNotFoundError: No module named 'rl', it is likely that the rl folder is not part of your Python path. To resolve this, you can add the project directory to your Python path:
   
-  1. ***Temporary Solution:***
-  
-    Windows:
+    1. ***Temporary Solution:***
     
-    Open a terminal in the main directory of the course project (where the rl folder is located).
+      Windows:
+      
+      Open a terminal in the main directory of the course project (where the rl folder is located).
+      
+      Run the following command:
+      
+      ```set PYTHONPATH=%PYTHONPATH%;%CD%```
+      
+      Mac/Linux:
+      
+      In a terminal, navigate to the project's main directory (where the rl folder is located).
+      
+      Run the following command:
+      
+      ```export PYTHONPATH="${PYTHONPATH}:$(pwd)"```
     
-    Run the following command:
-    
-    ```set PYTHONPATH=%PYTHONPATH%;%CD%```
-    
-    Mac/Linux:
-    
-    In a terminal, navigate to the project's main directory (where the rl folder is located).
-    
-    Run the following command:
-    
-    ```export PYTHONPATH="${PYTHONPATH}:$(pwd)"```
-  
-  2. ***Permanent Solution:***
-    
-    Windows: Add the directory path to your system environment variables in "System Properties" -> "Environment Variables".
-    
-    Mac/Linux: Add the export `PYTHONPATH="${PYTHONPATH}:$(pwd)"` line to your shell configuration file (e.g., .bashrc, .zshrc). This will ensure that the path is set every time you open a terminal.
+    2. ***Permanent Solution:***
+      
+      Windows: Add the directory path to your system environment variables in "System Properties" -> "Environment Variables".
+      
+      Mac/Linux: Add the export `PYTHONPATH="${PYTHONPATH}:$(pwd)"` line to your shell configuration file (e.g., .bashrc, .zshrc). This will ensure that the path is set every time you open a terminal.
 
 7. **Explore Assignments:**
 
