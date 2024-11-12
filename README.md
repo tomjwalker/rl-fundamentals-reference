@@ -16,7 +16,7 @@ need to master Reinforcement Learning concepts.
 - **utils/**: Utility scripts and helper functions.
 
 # What you'll implement
-|     Topic      |               [K-Armed Bandits](assignments/bandits.md)               |                          [Analytic solutions to MDPs](assignments/mdps.md)                          | [Dynamic Programming](assignments/dynamic_programming.md) |
+|     Topic      |               [K-Armed Bandits](assignments/bandits.md)               |                          [Analytic solutions to MDPs](assignments/markov_decision_processes.md)                          | [Dynamic Programming](assignments/dynamic_programming.md) |
 |:--------------:|:---------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------:|:---------------------------------------------------------:|
 |                | ![Epsilon Sweep Experiment Results](./images/bandits/kab_testbed.png) |                     ![xxx](./images/markov_decision_process/trans_diagram.png)                      | ![xxx](./images/dynamic_programming/value_iteration.png)  |
 | **Algorithms** |  Investigate epsilon-greedy and optimistic initial value solutions.   | Expressing Bellman equations as simultaneous equations; using `np.linalg` to solve for state values |      Implement policy iteration and value iteration       |
