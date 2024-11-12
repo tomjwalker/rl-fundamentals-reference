@@ -7,7 +7,7 @@
     - [x] MVP: attach slides and a bit of blurb to the Assignment
     - [ ] Record video of the slides
 - [ ] Mark feedback 12/11/24
-    - [ ] Beginner repo, link broken; https://github.com/Curbar-AI/rl-fundamentals-assignments-beginner/blob/main/assignments/mdps.md
+    - [x] Beginner repo, link broken; https://github.com/Curbar-AI/rl-fundamentals-assignments-beginner/blob/main/assignments/mdps.md
     - [ ] 3x3 MDP: frozen hole
     - [ ] https://arc.net/l/quote/lmdpkgqj this bit needs to say that we need to actually implement policy iteration!
     - [ ] and the lecture referred to here: https://arc.net/l/quote/ptaucbeq doesn’t seem to exist
