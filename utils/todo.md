@@ -12,6 +12,7 @@
     - [ ] https://arc.net/l/quote/lmdpkgqj this bit needs to say that we need to actually implement policy iteration!
     - [ ] and the lecture referred to here: https://arc.net/l/quote/ptaucbeq doesn’t seem to exist
     - [ ] JCP: theta = 1e-8 doesn’t terminate for some reason, 1e-3 is fine and makes the plots like in the readme - does it terminate with 1e-8 in your reference repo?
+- [ ] Probability / stats complementary lectures (+1 request from Jack)
     
 
 
