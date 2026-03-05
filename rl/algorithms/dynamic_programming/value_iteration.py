@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 from typing import Tuple
 from rl.environment.dynamic_programming.jacks_car_rental import JacksCarRental
 from rl.utils.general import set_filepath
@@ -36,8 +36,8 @@ class ValueIteration:
         Args:
             save_name (str): The name to use when saving the policy and value arrays.
         """
-        policy_dir = "./.data/dynamic_programming/policy_iteration/policy"
-        value_dir = "./.data/dynamic_programming/policy_iteration/value"
+        policy_dir = "./.data/dynamic_programming/value_iteration/policy"
+        value_dir = "./.data/dynamic_programming/value_iteration/value"
 
         # Ensure directories exist
         os.makedirs(policy_dir, exist_ok=True)
@@ -174,3 +174,4 @@ if __name__ == "__main__":
 
     # Plot the policy and value
     plot_policy_and_value(policy, value)
+

@@ -1,4 +1,4 @@
-# Assignment: FrozenLake GridWorlds
+﻿# Assignment: FrozenLake GridWorlds
 
 |                       Solve a 2x2 env analytically                       |                       Solve a 3x3 env analytically                       |
 |:------------------------------------------------------------------------:|:------------------------------------------------------------------------:|
@@ -6,103 +6,94 @@
 
 ## Overview
 
-In this assignment, you will explore the analytical and computational aspects of Markov Decision Processes (MDPs) using the FrozenLake environment from OpenAI's Gymnasium library. The assignment is divided into two investigations:
+In this assignment, you will explore the analytical and computational aspects of Markov Decision Processes (MDPs) using the FrozenLake environment from Gymnasium. The assignment is divided into two investigations:
 
-1. **Analytical Solution of FrozenLake GridWorlds:** Implement and solve the FrozenLake environment analytically for 2x2 and 3x3 grid sizes by constructing and solving corresponding linear systems. This exercise will deepen your understanding of MDPs and their mathematical foundations.
-
-2. **Performance Sweep over Varying Grid Sizes:** Execute a performance sweep to analyze how the solution time scales with increasing grid sizes. This investigation involves running predefined scripts to gather and visualize performance data, providing insights into the computational complexity of solving MDPs analytically.
+1. **Analytical Solution of FrozenLake GridWorlds:** Implement and solve the FrozenLake environment analytically for 2x2 and 3x3 grid sizes by constructing and solving the corresponding linear systems.
+2. **Performance Sweep over Varying Grid Sizes:** Execute a performance sweep to analyse how solve time scales with increasing grid sizes.
 
 ## Objectives
 
-- **Understand MDPs:** Grasp the fundamental concepts of Markov Decision Processes and their application in gridworld environments.
-- **Analytical Solutions:** Learn to construct and solve linear systems representing MDPs for small gridworlds.
-- **Performance Analysis:** Explore how computational performance varies with the size of the gridworld.
-- **Data Visualization:** Utilize Matplotlib to plot and interpret performance metrics with error bars indicating variability.
-- **Hands-On Experience:** Gain practical experience with Gymnasium environments, NumPy for linear algebra, and Python scripting for experiments.
+- Understand the Bellman-equation view of small MDPs
+- Construct and solve the linear systems for 2x2 and 3x3 FrozenLake problems
+- Explore how computational cost grows with grid size
+- Interpret the resulting plots and timings
 
 ## Files to Work On
 
 - `exercises/mdps/frozen_lake_investigation_1.py`
-  - **Functions to Implement:**
-    - `solve_two_by_two()`
-    - `solve_three_by_three()`
+  - `solve_two_by_two()`
+  - `solve_three_by_three()`
 - `exercises/mdps/frozen_lake_investigation_2.py`
-  - **Functionality:**
-    - Perform a sweep over different map sizes, solve them, measure solution times, and plot the results.
+  - Performance sweep and visualisation
 
 ---
 
 ## Instructions
 
-### Step 1: Analytical Solution of 2x2 and 3x3 FrozenLake Maps
+### Read the file layout first
 
-1. **Implement `solve_two_by_two` and `solve_three_by_three` Functions in `frozen_lake_investigation_1.py`:**
-   - **Objective:** Construct and solve the linear systems representing the MDPs for 2x2 and 3x3 FrozenLake grids.
-   - **Tasks:**
-     - **`solve_two_by_two()`:**
-       - Define the transition matrix `A` and reward vector `b` for the 2x2 grid.
-       - Solve the linear system to obtain state values `v`.
-     - **`solve_three_by_three()`:**
-       - Define the transition matrix `A` and reward vector `b` for the 3x3 grid.
-       - Solve the linear system to obtain state values `v`.
-   - **Hints:**
-     - The 2x2 case was covered in the lectures, so refer to that if you get stuck
-     - The 3x3 case is new. It might help to sketch out the transition diagram on paper.
-     - Holes are terminal states with reward 0. The goal state is a terminal state with reward 1.
-     - You can derive simultaneous equations for only the non-terminal states 
-     - (which means 5 states for this grid: 1 goal and 3 holes = 4 terminal states.)
+`exercises/mdps/frozen_lake_investigation_1.py` is a reference-style file.
 
-2. **Run the Analytical Solution:**
-   - **Objective:** Execute the script to compute and display state values for both grid sizes.
-   - **Tasks:**
-     - Ensure your implementation is complete and save `frozen_lake_investigation_1.py`.
-     - Run the script from the root directory:
-       ```bash
-       python -m exercises.mdps.frozen_lake_investigation_1 solve
-       ```
-   - **Observe:** The printed state values for both 2x2 and 3x3 grids, ensuring terminal states are correctly represented.
-     <br><br>
-   
+- Only edit code inside `# ASSIGNMENT START` / `# ASSIGNMENT END` blocks.
+- Ignore any `# SOLUTION START` / `# SOLUTION END` blocks in the reference repo.
+- If you are working in a generated student repo, those solution blocks should already be removed for you.
+
+### Step 1: Analytical solution of 2x2 and 3x3 FrozenLake maps
+
+1. **Implement `solve_two_by_two()` and `solve_three_by_three()` in `frozen_lake_investigation_1.py`.**
+   - Construct the linear systems `A v = b` for the equiprobable policy.
+   - The 2x2 case was covered in the lectures, so use that as the template.
+   - For the 3x3 case, it helps to sketch the state transitions on paper first.
+   - Holes are terminal states with reward 0. The goal state is terminal with reward 1.
+   - You only need simultaneous equations for the non-terminal states.
+
+2. **Run the analytical solution.**
+   - If you are using `uv`:
+     ```bash
+     uv run python -m exercises.mdps.frozen_lake_investigation_1 solve
+     ```
+   - If you are using the pip fallback environment from the README, run the same command without `uv run`.
+
+3. **Check the output.**
+   - The printed values should be finite and the terminal-state structure should make sense.
+   - The 3x3 system is larger, but it follows the same Bellman-equation logic as the 2x2 case.
+
 |                            Solve a 2x2 env analytically                            |                            Solve a 3x3 env analytically                            |
 |:----------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------:|
 |      ![2x2 FrozenLake Episodes](../images/markov_decision_process/2_by_2.gif)      |      ![3x3 FrozenLake Episodes](../images/markov_decision_process/3_by_3.gif)      |
 | ![2x2 FrozenLake Episodes](../images/markov_decision_process/2_by_2_solutions.jpg) | ![3x3 FrozenLake Episodes](../images/markov_decision_process/3_by_3_solutions.jpg) |
 
-### Step 2: Performance Sweep over Varying Grid Sizes
+### Step 2: Performance sweep over varying grid sizes
 
-1. **Run the Performance Sweep Script:**
-   - **Objective:** Analyze how the solution time scales with increasing grid sizes.
-   - **Tasks:**
-     - Investigate `exercises.mdps.frozen_lake_investigation_2`
-     - This script derives the A and b matrices for different grid sizes automatically, solves the linear system, and 
-     measures the solution time.
-     - You can check it gets the same results as your manual calculations via:
-     - ```bash
-       python -m exercises.mdps.frozen_lake_investigation_2 solve
-       ```
-     - But its main function is to perform a sweep over different grid sizes and plot the results (see below)
-   - **Run:**
-     - Navigate to the root directory of your repository.
-     - Execute the sweep:
-       ```bash
-       python -m exercises.mdps.frozen_lake_investigation_2 sweep
-       ```
-     - **Observe:** The script will perform multiple runs for each grid size, measure solution times, and plot the results with error bars indicating standard deviation over runs.
+1. **Inspect `exercises.mdps.frozen_lake_investigation_2`.**
+   - This script derives the `A` and `b` matrices for different grid sizes automatically.
+   - It can reproduce the same 2x2 and 3x3 answers programmatically.
 
-    <br><br>
-    ![Sweep results](../images/markov_decision_process/frozen_lake_sweep.png)
-    
-    - *Sweep of different map sizes from 2x2, increasing in steps of 10, e.g. 12x12, 22x22...*
-    - *Randomly generated maps, so results averaged over 5 runs per side length*
-    - *Matrix inversion techniques like `np.linalg` should solve in time ~ O(num_states^3)*
-    - *i.e. time ~ O(side_length^6) (although holes reduce this)*
+2. **Optionally verify the solver path.**
+   - If you are using `uv`:
+     ```bash
+     uv run python -m exercises.mdps.frozen_lake_investigation_2 solve
+     ```
+
+3. **Run the sweep.**
+   - If you are using `uv`:
+     ```bash
+     uv run python -m exercises.mdps.frozen_lake_investigation_2 sweep
+     ```
+   - If you are using the pip fallback environment from the README, run the same command without `uv run`.
+
+4. **Interpret the result.**
+   - The plot shows how solution time grows as the map gets larger.
+   - Matrix inversion via `np.linalg.solve` should scale roughly like `O(num_states^3)`.
+   - For an `n x n` grid, that means growth on the order of `O(n^6)` before accounting for terminal holes.
+
+![Sweep results](../images/markov_decision_process/frozen_lake_sweep.png)
+
+*Sweep of different map sizes from 2x2 upward, averaged over multiple random maps.*
 
 ## Additional Resources
 
 - Sutton & Barto (2018): Reinforcement Learning: An Introduction (Second Edition), Chapter 3
-    - Covers the theory finite MDPs and Bellman equations
-- MDPs: Lecture Notes (the 2x2 case was covered in the lectures)
-- Gymnasium Frozen Lake documentation: https://gymnasium.farama.org/environments/toy_text/frozen_lake/
-
----
-Good luck with your assignment!
+  - Finite MDPs and Bellman equations
+- MDPs: Lecture Notes
+- Gymnasium Frozen Lake documentation

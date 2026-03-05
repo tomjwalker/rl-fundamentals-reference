@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -44,9 +44,9 @@ def _get_policy_for_agent(mc_agent, usable_ace):
     elif mc_agent.name == "MC On-Policy":
         # For stochastic policies, return the action with the highest probability
         if usable_ace:
-            q_vals = mc_agent.q_values.stats[PLAYER_MIN_POLICY:PLAYER_MAX + 1, DEALER_MIN:DEALER_MAX + 1, 1, :]
+            q_vals = mc_agent.q_values.values[PLAYER_MIN_POLICY:PLAYER_MAX + 1, DEALER_MIN:DEALER_MAX + 1, 1, :]
         else:
-            q_vals = mc_agent.q_values.stats[PLAYER_MIN_POLICY:PLAYER_MAX + 1, DEALER_MIN:DEALER_MAX + 1, 0, :]
+            q_vals = mc_agent.q_values.values[PLAYER_MIN_POLICY:PLAYER_MAX + 1, DEALER_MIN:DEALER_MAX + 1, 0, :]
         policy = _argmax_last_tie(q_vals)
 
     else:
@@ -135,3 +135,4 @@ def plot_results(mc_control):
 # Example usage:
 # Assuming `mc_control` is defined and PLAYER_MIN_VALUE, PLAYER_MAX, DEALER_MIN, DEALER_MAX are set appropriately
 # plot_results(mc_control)
+

@@ -1,17 +1,19 @@
-# Assignment: Monte Carlo Area Estimation
+﻿# Bonus Exercise: Monte Carlo Area Estimation
 
 ![Convergence Plot](../images/monte_carlo/star.png)
 
 ## Overview
 
-In this assignment, you will implement and analyze a Monte Carlo simulation to estimate the area of complex geometric shapes, specifically a pentagram inscribed in a unit circle. Through this exercise, you will gain hands-on experience with Monte Carlo methods and their application in reinforcement learning contexts.
+This is an optional bonus exercise rather than a core reinforcement-learning assignment.
 
-### Objectives:
-- Understand the implementation of the Monte Carlo method for area estimation.
-- Analyse how sample size affects the accuracy of the estimation.
-- Visualise the convergence of the estimated area to the exact area.
+It uses Monte Carlo estimation to approximate the area of a pentagram inscribed in the unit circle. The point is to build intuition for sampling, convergence, and the law of large numbers in a simple geometric setting.
 
-## Files to Work On
+### Objectives
+- Understand the Monte Carlo method for area estimation
+- See how sample size affects accuracy and convergence
+- Visualise the estimate approaching the exact answer
+
+## File to Work On
 
 - `exercises/monte_carlo/star_area_estimation.py`
 
@@ -19,57 +21,44 @@ In this assignment, you will implement and analyze a Monte Carlo simulation to e
 
 ## Instructions
 
-### Step 1: Understanding the Exact Area Calculation
+### Step 1: Understanding the exact area calculation
 
-1. **Examine the `exact_pentagram_area` function in `monte_carlo_pentagram.py`:**
-   - **Objective:** Understand how the exact area of a pentagram is calculated analytically.
-   - **Tasks:**
-     - Review the mathematical derivation used to compute the area.
+1. **Examine the `exact_pentagram_area` function in `exercises/monte_carlo/star_area_estimation.py`.**
+   - Understand how the exact area of the pentagram is calculated analytically.
+   - This is useful context, but the main task is the Monte Carlo estimator below.
 
-### Step 2: Implementing the Monte Carlo Simulation
+### Step 2: Implementing the Monte Carlo simulation
 
-1. **Review the `is_inside_pentagram` function:**
-   - **Objective:** Understand how the simulation determines whether a randomly sampled point lies inside the pentagram.
-   - **Tasks:**
-     - Study the geometric criteria used for point inclusion.
-2. **Complete the `monte_carlo_pentagram_area` function:**
-   - **HOMEWORK:**
-     - **Task 1:** Input the area of the square bounding the unit circle.
-     - **Task 2:** Use the helper function to check if each sampled point is inside the pentagram.
-     - **Task 3:** If the point is inside, increment the `inside_count`.
-     - **Task 4:** Calculate the area estimate based on the ratio of points inside to total points sampled.
-     - **Task 5:** Append the current area estimate to the `area_estimates` list to track the history of estimates.
+1. **Review the `is_inside_pentagram` function.**
+   - Understand how the simulation decides whether a sampled point lies inside the pentagram.
+2. **Complete the `monte_carlo_pentagram_area` function.**
+   - Input the area of the square bounding the unit circle.
+   - Use the helper to check whether each sampled point is inside the pentagram.
+   - Increment the count for inside points.
+   - Compute the area estimate from the running ratio.
+   - Append each estimate to `area_estimates`.
 
-3. **Run the Monte Carlo Simulation:**
-   - **Objective:** Execute the simulation to estimate the pentagram's area.
-   - **Tasks:**
-     - Run the script with the default number of samples:
-       ```bash
-       python -m exercises.monte_carlo.star_area_estimation
-       ```
+3. **Run the simulation.**
+   - If you are using `uv`:
+     ```bash
+     uv run python -m exercises.monte_carlo.star_area_estimation
+     ```
+   - If you are using the pip fallback environment from the README, run the same command without `uv run`.
 
-### Step 3: Experimentation and Exploration
+### Step 3: Experimentation and exploration
 
-1. **Vary the Number of Samples:**
-   - **Objective:** Observe how changing the number of samples affects the simulation's accuracy and convergence speed.
-   - **Tasks:**
-     - Run the simulation with varying `num_samples` values (e.g., 1000, 5000, 10000, 20000).
-     - Compare the final estimated areas and convergence plots.
+1. **Vary the number of samples.**
+   - Try values such as `1000`, `5000`, `10000`, and `20000`.
+   - Compare the final estimates and the convergence plots.
 
-2. **Stretch goal:**
-   - **Task:** Modify the script to estimate the area of a different inscribed shape, such as a hexagram.
-   - **Hints:**
-     - Adjust the `is_inside_pentagram` function to accommodate the new shape's geometry.
-     - Update the exact area calculation accordingly.
+2. **Stretch goal.**
+   - Modify the script to estimate the area of a different inscribed shape, such as a hexagram.
+   - Adjust both the inside-test logic and the exact-area calculation.
 
 ---
 
-## Expected Outputs
-
-### Monte Carlo Estimation Convergence
+## Expected Output
 
 ![Convergence Plot](../images/monte_carlo/star.png)
 
-*The convergence plot shows the estimated area approaching the exact area as the number of samples increases, demonstrating the Monte Carlo method's accuracy with sufficient sampling.*
-
----
+*The estimated area should settle toward the exact value as the number of samples grows.*
