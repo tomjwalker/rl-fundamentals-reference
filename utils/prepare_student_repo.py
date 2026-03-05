@@ -74,6 +74,8 @@ ROOT_FILES = ["README.md", ".gitignore", ".python-version", "pyproject.toml", "u
 HOMEWORK_MARKERS = ["# HOMEWORK:", "# HOMEWORK BEGINS:", "# HOMEWORK START:", "# HOMEWORK STARTS:"]
 HOMEWORK_END_MARKERS = ["# HOMEWORK ENDS", "# HOMEWORK END"]
 DEFAULT_DIRS = ["rl", "exercises", "assignments", "images", "checks"]
+SKIP_DIRS = {"__pycache__", ".git", ".pytest_cache", ".ruff_cache", ".venv", "venv"}
+SKIP_FILE_SUFFIXES = (".pyc", ".pyo")
 
 
 def process_code_line(line: str) -> str:
@@ -284,11 +286,16 @@ def process_directory(input_dir: str, output_dir: str, dirs_to_process: list, mo
         mode (str): Processing mode, 'beginner' or 'advanced'.
     """
     for root, dirs, files in os.walk(input_dir):
+        dirs[:] = [directory for directory in dirs if directory not in SKIP_DIRS]
+
         rel_dir = os.path.relpath(root, input_dir)
         if dirs_to_process and not any(rel_dir == d or rel_dir.startswith(d + os.sep) for d in dirs_to_process):
             continue
 
         for file_name in files:
+            if file_name.endswith(SKIP_FILE_SUFFIXES):
+                continue
+
             input_path = os.path.join(root, file_name)
             relative_path = os.path.relpath(input_path, input_dir)
             output_path = os.path.join(output_dir, relative_path)

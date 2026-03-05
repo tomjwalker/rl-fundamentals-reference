@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 from utils import prepare_student_repo as prep
 
@@ -73,3 +73,19 @@ def test_copy_root_files_and_checks_directory(tmp_path: Path) -> None:
 
     assert not (output_dir / "AGENTS.md").exists()
     assert (output_dir / "checks" / "bandits.txt").read_text(encoding="utf-8") == "copied\n"
+
+
+def test_process_directory_skips_pycache_and_pyc_files(tmp_path: Path) -> None:
+    input_dir = tmp_path / "reference"
+    output_dir = tmp_path / "student"
+    pycache_dir = input_dir / "checks" / "__pycache__"
+    pycache_dir.mkdir(parents=True)
+    (input_dir / "checks" / "lesson.pyc").write_bytes(b"cache")
+    (pycache_dir / "module.cpython-311.pyc").write_bytes(b"cache")
+    (input_dir / "checks" / "lesson.txt").write_text("keep\n", encoding="utf-8")
+
+    prep.process_directory(str(input_dir), str(output_dir), ["checks"], mode="beginner")
+
+    assert not (output_dir / "checks" / "lesson.pyc").exists()
+    assert not (output_dir / "checks" / "__pycache__").exists()
+    assert (output_dir / "checks" / "lesson.txt").read_text(encoding="utf-8") == "keep\n"
