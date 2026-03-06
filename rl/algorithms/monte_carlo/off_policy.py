@@ -5,8 +5,6 @@
 
 from rl.algorithms.monte_carlo.viz import plot_results
 from rl.algorithms.common.mc_agent import MonteCarloAgent
-# N.B., numpy argmax used in this instance to ensure ties are broken consistently
-
 from rl.common.policy import EpsilonGreedyPolicy, DeterministicPolicy
 
 import gymnasium as gym
@@ -43,8 +41,7 @@ class MCOffPolicy(MonteCarloAgent):
     ) -> None:
         super().__init__(env, gamma, epsilon, logger, random_seed)
 
-        self.name: str = "MC Off-Policy"  # For plotting
-
+        self.name: str = "MC Off-Policy"
         self.policy: Union[DeterministicPolicy, None] = None
         self.behaviour_policy: Union[EpsilonGreedyPolicy, None] = None
         self.reset()
@@ -56,70 +53,34 @@ class MCOffPolicy(MonteCarloAgent):
         off-policy Monte Carlo control.
         """
         super().reset()
-
-        # HOMEWORK: Initialise target policy (deterministic)
         self.policy = DeterministicPolicy(self.state_shape)
-
-        # HOMEWORK: Initialise behaviour policy (epsilon-greedy)
         self.behaviour_policy = EpsilonGreedyPolicy(self.epsilon, self.env.action_space.n)
 
     def act(self, state: Tuple[int, ...]) -> int:
         """
-        Selects an action based on the behaviour policy (epsilon-greedy with respect to the q-values).
-
-        Args:
-            state (Tuple[int, ...]): The current state of the environment.
-
-        Returns:
-            int: The action selected by the behaviour policy.
+        Selects an action based on the behaviour policy.
         """
-        # HOMEWORK: Select an action using the behaviour policy
         return self.behaviour_policy.select_action(state, self.q_values)
 
     def _update_q_and_pi(self, episode: List[Tuple[Tuple[int, ...], int, float]]) -> None:
         """
-        Updates q-values using first-visit Monte Carlo and updates the target policy.
-
-        Args:
-            episode (List[Tuple[Tuple[int, ...], int, float]]): The episode to update from,
-            consisting of (state, action, reward) tuples.
+        Updates q-values using weighted importance sampling and updates the target policy.
         """
-        # Initialise returns ("G") and weights ("W") for this episode
         returns: float = 0
         weights: float = 1
 
-        # Starting from terminal state, work backwards through the episode
-        for t, (state, action, reward) in enumerate(reversed(episode)):
-
-            # HOMEWORK: G <- gamma * G + R_t+1
+        for state, action, reward in reversed(episode):
             returns = self.gamma * returns + reward
-            #
-            # # Skip if the (state, action) pair has been seen before (first-visit MC)
-            # if self._is_subelement_present((state, action), episode[:len(episode) - t - 1]):
-            #     continue
+            self.state_action_stats.update_importance_sampling(state, action, weights)
 
-            # HOMEWORK: C(S_t, A_t) <- C(S_t, A_t) + W.
-            # Implement and use self.state_action_stats.update_importance_sampling
-            self.state_action_stats.update_importance_sampling(state, action, weights)  # Update C(S_t, A_t)
-
-            # HOMEWORK STARTS: (~3 lines of code) Update the q-values for this state-action pair.
-            # Q(S_t, A_t) <- Q(S_t, A_t) + W / C(S_t, A_t) * (G - Q(S_t, A_t))
-            step_size: float = weights / self.state_action_stats.get(state, action)  # W / C(S_t, A_t)
-            new_value: float = self.q_values.get(state, action) + step_size * (returns - self.q_values.get(state, action))  # NoQA
-            self.q_values.update(state, action, new_value)  # Update Q(S_t, A_t)
-            # HOMEWORK ENDS
-
-            # HOMEWORK: Update the target policy (self.policy).
-            # N.B. 1. Target policy `policy` is deterministic.
-            #      2. Ties are broken consistently with "last".
+            step_size: float = weights / self.state_action_stats.get(state, action)
+            new_value: float = self.q_values.get(state, action) + step_size * (returns - self.q_values.get(state, action))
+            self.q_values.update(state, action, new_value)
             self.policy.update(state, self.q_values, ties="last")
 
-            # If chosen action is not the same as the target policy, break loop
             if action != self.policy.select_action(state):
                 break
 
-            # HOMEWORK: W <- W * 1 / b(A_t | S_t)
-            # Implement and use self.behaviour_policy.compute_probs
             weights *= 1 / self.behaviour_policy.compute_probs(state, self.q_values)[action]
 
     def learn(self, num_episodes: int = 10000) -> None:
@@ -129,14 +90,13 @@ class MCOffPolicy(MonteCarloAgent):
         Args:
             num_episodes (int): The number of episodes to train the agent for.
         """
-        for episode in range(num_episodes):
+        for episode_idx in range(num_episodes):
+            if episode_idx % 1000 == 0:
+                print(f"Episode {episode_idx}/{num_episodes}")
 
-            # Print progress
-            if episode % 1000 == 0:
-                print(f"Episode {episode}/{num_episodes}")
-
-            episode = self._generate_episode()
+            episode = self._generate_episode(exploring_starts=False)
             self._update_q_and_pi(episode)
+            self.logger.log_episode()
 
 
 def run(num_episodes: int = 50000) -> None:
@@ -146,12 +106,9 @@ def run(num_episodes: int = 50000) -> None:
     Args:
         num_episodes (int): The number of episodes to train the agent for.
     """
-    # Create the environment
-    env: Env = gym.make("Blackjack-v1", sab=True)  # `sab` means rules following Sutton and Barto
+    env: Env = gym.make("Blackjack-v1", sab=True)
     rl_loop: MCOffPolicy = MCOffPolicy(env, epsilon=0.1, gamma=1.0)
     rl_loop.learn(num_episodes=num_episodes)
-
-    # Plot the results
     plot_results(rl_loop)
 
 

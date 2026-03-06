@@ -1,4 +1,4 @@
-# epsilon_greedy.py
+﻿# epsilon_greedy.py
 
 from typing import Tuple
 import numpy as np
@@ -153,7 +153,7 @@ def epsilon_sweep_experiment() -> None:
     k_mean = 0
     k_std = 1
     bandit_std = 1
-    env = KArmedTestbed(num_runs, k, k_mean, k_std, bandit_std, random_seed)
+    env = KArmedTestbed(num_runs, k, k_mean, k_std, bandit_std, with_seed=True)
 
     # Define the epsilon values to test
     runs = {"green": 0, "red": 0.01, "blue": 0.1}  # {plot_colour: epsilon}
@@ -170,8 +170,8 @@ def epsilon_sweep_experiment() -> None:
         optimal_action_fraction = optimal_action_testbed.mean(axis=1)
 
         # Plot the results
-        ax[0].plot(mean_rewards, label=f"ε={epsilon}", color=plot_colour)
-        ax[1].plot(optimal_action_fraction * 100, label=f"ε={epsilon}", color=plot_colour)
+        ax[0].plot(mean_rewards, label=f"Îµ={epsilon}", color=plot_colour)
+        ax[1].plot(optimal_action_fraction * 100, label=f"Îµ={epsilon}", color=plot_colour)
 
     # Set titles and labels
     ax[0].set_title("Average reward over time")
@@ -209,7 +209,7 @@ def initial_val_experiment(
     k_mean = 0
     k_std = 1
     bandit_std = 1
-    env = KArmedTestbed(num_runs, k, k_mean, k_std, bandit_std, random_seed)
+    env = KArmedTestbed(num_runs, k, k_mean, k_std, bandit_std, with_seed=True)
 
     # Define the runs with different initialisations
     runs = {
@@ -296,3 +296,4 @@ if __name__ == "__main__":
 
     # Run showing individual runs and confidence intervals
     # initial_val_experiment(show_individual_runs=True, show_confidence_interval=True)
+

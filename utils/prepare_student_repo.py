@@ -22,7 +22,7 @@ and function content.
          - If it's an assignment (`LHS = RHS` or `LHS += RHS`), the RHS is replaced with a placeholder.
          - If it's a method call or other statement, it's replaced with a `# TODO` comment.
      - **Block Redaction**:
-       - Blocks between `# HOMEWORK START` and `# HOMEWORK END` are replaced with a placeholder line.
+       - Blocks between `# HOMEWORK START`, `# HOMEWORK STARTS`, and `# HOMEWORK END(S)` are replaced with a placeholder line.
 
   2. **ASSIGNMENT and SOLUTION Markers**:
      - **ASSIGNMENT Blocks**:
@@ -51,24 +51,32 @@ and function content.
 **Arguments**:
     input_dir     Path to the input directory (reference repository).
     output_dir    Path to the output directory (student repository).
-    --dirs        (Optional) One or more directories within the input directory to process. Defaults to ['rl', 'exercises', 'assignments', 'images'].
+    --dirs        (Optional) One or more directories within the input directory to process. Defaults to
+                  ['rl', 'exercises', 'assignments', 'images', 'checks'].
     --mode        (Optional) Processing mode: 'beginner' or 'advanced'. Defaults to 'beginner'.
 
 **Notes**:
     - The script processes Python files (.py) by redacting code sections based on the markers.
     - It copies other files (e.g., .md, .png, .jpg) in the specified directories without modification.
-    - It copies the root README.md and .gitignore files without modification.
-    - A requirements.txt file is generated based on the input directory's dependencies.
+    - It copies the root README.md, .gitignore, pyproject.toml, uv.lock, and requirements.txt files without modification.
 
 Generated with the help of o1-preview!
 """
 
-import os
-import shutil
 import argparse
+import os
 import re
+import shutil
 import sys
-import subprocess
+
+
+ROOT_FILES = ["README.md", ".gitignore", ".python-version", "pyproject.toml", "uv.lock", "requirements.txt"]
+HOMEWORK_MARKERS = ["# HOMEWORK:", "# HOMEWORK BEGINS:", "# HOMEWORK START:", "# HOMEWORK STARTS:"]
+HOMEWORK_END_MARKERS = ["# HOMEWORK ENDS", "# HOMEWORK END"]
+DEFAULT_DIRS = ["rl", "exercises", "assignments", "images", "checks"]
+SKIP_DIRS = {"__pycache__", ".git", ".pytest_cache", ".ruff_cache", ".venv", "venv"}
+SKIP_FILE_SUFFIXES = (".pyc", ".pyo")
+
 
 def process_code_line(line: str) -> str:
     """
@@ -80,26 +88,24 @@ def process_code_line(line: str) -> str:
     Returns:
         str: The redacted line with placeholders for student implementation.
     """
-    stripped_line = line.rstrip('\n')
-    # Adjusted regex to handle optional type annotations and augmented assignments
+    stripped_line = line.rstrip("\n")
     assignment_match = re.match(
-        r'^(\s*)([\w,\s]+)(\s*:\s*[\w\[\],\s]+)?\s*([+\-*/%@&|^]=|//=|>>=|<<=|@=|=)\s*(.*)',
-        stripped_line
+        r"^(\s*)([\w,\s]+)(\s*:\s*[\w\[\],\s]+)?\s*([+\-*/%@&|^]=|//=|>>=|<<=|@=|=)\s*(.*)",
+        stripped_line,
     )
     if assignment_match:
         indent = assignment_match.group(1)
-        lhs = assignment_match.group(2)
-        type_annotation = assignment_match.group(3) or ''
+        lhs = assignment_match.group(2).rstrip()
+        type_annotation = assignment_match.group(3) or ""
         operator = assignment_match.group(4)
-        # Retain indentation, LHS, operator, and type annotation
         return f"{indent}{lhs}{type_annotation} {operator} None  # TODO: Implement this assignment\n"
-    else:
-        # Handle non-assignment lines
-        indent_match = re.match(r'^(\s*)', stripped_line)
-        indent = indent_match.group(1) if indent_match else ''
-        return f"{indent}# TODO: Implement this line\n"
 
-def process_file(input_path: str, output_path: str, mode: str = 'beginner') -> None:
+    indent_match = re.match(r"^(\s*)", stripped_line)
+    indent = indent_match.group(1) if indent_match else ""
+    return f"{indent}# TODO: Implement this line\n"
+
+
+def process_file(input_path: str, output_path: str, mode: str = "beginner") -> None:
     """
     Process a single Python file by redacting homework and solution sections and copying necessary content.
 
@@ -108,19 +114,20 @@ def process_file(input_path: str, output_path: str, mode: str = 'beginner') -> N
         output_path (str): The path to save the redacted Python file.
         mode (str): Processing mode, 'beginner' or 'advanced'.
     """
-    with open(input_path, 'r', encoding='utf-8') as infile:
+    with open(input_path, "r", encoding="utf-8") as infile:
         lines = infile.readlines()
 
-    if mode == 'beginner':
+    if mode == "beginner":
         processed_lines = process_lines_beginner(lines)
-    elif mode == 'advanced':
+    elif mode == "advanced":
         processed_lines = process_lines_advanced(lines)
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
 
-    # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    with open(output_path, 'w', encoding='utf-8') as outfile:
+    with open(output_path, "w", encoding="utf-8") as outfile:
         outfile.writelines(processed_lines)
+
 
 def process_lines_beginner(lines):
     """
@@ -138,77 +145,54 @@ def process_lines_beginner(lines):
         line = lines[i]
         stripped_line = line.strip()
 
-        # Skip personal TODO comments
         if stripped_line.startswith("# TODO") and not any(
             tag in stripped_line for tag in ["# TODO: Implement", "# TODO: Implement this assignment"]
         ):
             i += 1
-            continue
 
-        # Handle SOLUTION blocks
         elif any(stripped_line.startswith(tag) for tag in ["# SOLUTION START", "# SOLUTION BEGINS"]):
-            # Skip all lines until SOLUTION END
             i += 1
             while i < len(lines) and not lines[i].strip().startswith("# SOLUTION END"):
                 i += 1
-            # Skip the SOLUTION END line
             if i < len(lines):
                 i += 1
-            continue
 
-        # Handle ASSIGNMENT blocks
         elif any(stripped_line.startswith(tag) for tag in ["# ASSIGNMENT START", "# ASSIGNMENT BEGINS"]):
-            # Retain the ASSIGNMENT START line
             processed_lines.append(line)
             i += 1
-            # Retain all lines until ASSIGNMENT END
             while i < len(lines) and not lines[i].strip().startswith("# ASSIGNMENT END"):
                 processed_lines.append(lines[i])
                 i += 1
-            # Retain the ASSIGNMENT END line
             if i < len(lines):
                 processed_lines.append(lines[i])
                 i += 1
-            continue
 
-        # Handle HOMEWORK markers
-        elif any(stripped_line.startswith(tag) for tag in ["# HOMEWORK:", "# HOMEWORK BEGINS:", "# HOMEWORK START:"]):
-            # Retain all consecutive comment lines related to homework
+        elif any(stripped_line.startswith(tag) for tag in HOMEWORK_MARKERS):
             while i < len(lines) and lines[i].strip().startswith("#"):
                 processed_lines.append(lines[i])
                 i += 1
 
-            # Handle single-line homework redaction
             if "HOMEWORK:" in stripped_line:
                 if i < len(lines):
-                    code_line = lines[i]
-                    redacted_line = process_code_line(code_line)
-                    processed_lines.append(redacted_line)
+                    processed_lines.append(process_code_line(lines[i]))
                     i += 1
             else:
-                # Handle multi-line homework block redaction
-                next_line = lines[i] if i < len(lines) else ''
-                indent_match = re.match(r'^(\s*)', next_line)
-                indent = indent_match.group(1) if indent_match else ''
-                # Add a placeholder for multi-line homework sections
+                next_line = lines[i] if i < len(lines) else ""
+                indent_match = re.match(r"^(\s*)", next_line)
+                indent = indent_match.group(1) if indent_match else ""
                 processed_lines.append(f"{indent}pass  # TODO: Implement this section\n")
-                # Skip lines until the end of the homework block
-                while i < len(lines) and not any(
-                    lines[i].strip().startswith(tag) for tag in ["# HOMEWORK ENDS", "# HOMEWORK END"]
-                ):
+                while i < len(lines) and not any(lines[i].strip().startswith(tag) for tag in HOMEWORK_END_MARKERS):
                     i += 1
-                # Retain the end marker of the homework block
                 if i < len(lines):
                     processed_lines.append(lines[i])
                     i += 1
-            continue
 
         else:
-            # Regular line, add without modification
             processed_lines.append(line)
             i += 1
 
     return processed_lines
+
 
 def process_lines_advanced(lines):
     """
@@ -220,102 +204,78 @@ def process_lines_advanced(lines):
     Returns:
         list: Processed lines.
     """
-    # First pass: Identify functions/methods with markers
-    function_ranges = []  # List of tuples (start_line, end_line, should_redact)
+    function_ranges = []
     i = 0
     while i < len(lines):
         line = lines[i]
-        stripped_line = line.strip()
-
-        # Detect function or method definition, accounting for return type annotations
-        func_match = re.match(r'^(\s*)def\s+\w+\s*\(.*\)\s*(->\s*[\w\[\],\s\.]+)?\s*:', line)
+        func_match = re.match(r"^(\s*)def\s+\w+\s*\(.*\)\s*(->\s*[\w\[\],\s\.]+)?\s*:", line)
         if func_match:
             indent_level = len(func_match.group(1))
             start_line = i
             should_redact = False
             i += 1
-            # Collect function body
             while i < len(lines):
                 next_line = lines[i]
                 next_line_strip = next_line.strip()
-                next_indent_level = len(next_line) - len(next_line.lstrip(' '))
-
-                # Check if we've exited the function (dedentation)
-                if next_indent_level <= indent_level and next_line_strip != '':
+                next_indent_level = len(next_line) - len(next_line.lstrip(" "))
+                if next_indent_level <= indent_level and next_line_strip != "":
                     break
-
-                # Check for markers within the function
-                if any(marker in next_line_strip for marker in ['# HOMEWORK', '# ASSIGNMENT', '# SOLUTION']):
+                if any(marker in next_line_strip for marker in ["# HOMEWORK", "# ASSIGNMENT", "# SOLUTION"]):
                     should_redact = True
-
                 i += 1
-
-            end_line = i
-            function_ranges.append((start_line, end_line, should_redact))
+            function_ranges.append((start_line, i, should_redact))
         else:
             i += 1
 
-    # Second pass: Write the output file with redactions
     processed_lines = []
     function_index = 0
     i = 0
     while i < len(lines):
-        # Check if current line is the start of a function to redact
         if function_index < len(function_ranges) and i == function_ranges[function_index][0]:
             start_line, end_line, should_redact = function_ranges[function_index]
             function_index += 1
             if should_redact:
-                # Redact the entire function but retain the docstring
                 func_def_line = lines[start_line]
-                func_match = re.match(r'^(\s*)def\s+(\w+)\s*\(.*\)\s*(->\s*[\w\[\],\s\.]+)?\s*:', func_def_line)
+                func_match = re.match(r"^(\s*)def\s+(\w+)\s*\(.*\)\s*(->\s*[\w\[\],\s\.]+)?\s*:", func_def_line)
                 indent = func_match.group(1)
                 func_name = func_match.group(2)
-                params = func_def_line[func_def_line.find('('):func_def_line.rfind(')')+1]
-                return_annotation = func_match.group(3) if func_match.group(3) else ''
-                # Extract the docstring if present
-                func_body_lines = lines[start_line+1:end_line]
+                params = func_def_line[func_def_line.find("(") : func_def_line.rfind(")") + 1]
+                return_annotation = func_match.group(3) if func_match.group(3) else ""
+                func_body_lines = lines[start_line + 1 : end_line]
                 docstring_lines = []
                 if func_body_lines:
-                    first_body_line = func_body_lines[0]
-                    first_body_line_stripped = first_body_line.strip()
-                    if first_body_line_stripped.startswith(('"""', "'''")):
-                        # Start of docstring
-                        docstring_lines.append(first_body_line)
-                        j = 1
-                        while j < len(func_body_lines):
-                            line = func_body_lines[j]
-                            docstring_lines.append(line)
-                            if line.strip().endswith(('"""', "'''")) and len(line.strip()) > 3:
-                                break
-                            elif line.strip() in ('"""', "'''"):
-                                break
-                            j += 1
-                # Build the placeholder function
+                    first_body_line = func_body_lines[0].strip()
+                    if first_body_line.startswith(('"""', "'''")):
+                        docstring_lines.append(func_body_lines[0])
+                        if not (first_body_line.endswith(('"""', "'''")) and len(first_body_line) > 3):
+                            j = 1
+                            while j < len(func_body_lines):
+                                docstring_lines.append(func_body_lines[j])
+                                stripped = func_body_lines[j].strip()
+                                if stripped.endswith(('"""', "'''")) and len(stripped) > 3:
+                                    break
+                                if stripped in ('"""', "'''"):
+                                    break
+                                j += 1
                 placeholder = f"{indent}def {func_name}{params}{return_annotation}:\n"
-                if docstring_lines:
-                    # Add docstring lines as is
-                    for doc_line in docstring_lines:
-                        placeholder += doc_line
+                for doc_line in docstring_lines:
+                    placeholder += doc_line
                 placeholder += f"{indent}    pass  # TODO: Implement this function\n"
-                # Add the placeholder to processed_lines
                 processed_lines.append(placeholder)
-                # Add two blank lines after the function
-                processed_lines.append('\n\n')
-                i = end_line  # Skip to the end of the function
+                processed_lines.append("\n\n")
+                i = end_line
             else:
-                # Keep the function as is
                 while i < end_line:
                     processed_lines.append(lines[i])
                     i += 1
         else:
-            # Regular line, add without modification
             processed_lines.append(lines[i])
             i += 1
 
     return processed_lines
 
 
-def process_directory(input_dir: str, output_dir: str, dirs_to_process: list, mode: str = 'beginner') -> None:
+def process_directory(input_dir: str, output_dir: str, dirs_to_process: list, mode: str = "beginner") -> None:
     """
     Traverse the input directory, process specified subdirectories, and copy/redact files accordingly.
 
@@ -326,82 +286,41 @@ def process_directory(input_dir: str, output_dir: str, dirs_to_process: list, mo
         mode (str): Processing mode, 'beginner' or 'advanced'.
     """
     for root, dirs, files in os.walk(input_dir):
-        rel_dir = os.path.relpath(root, input_dir)
+        dirs[:] = [directory for directory in dirs if directory not in SKIP_DIRS]
 
-        # Skip directories not in dirs_to_process
+        rel_dir = os.path.relpath(root, input_dir)
         if dirs_to_process and not any(rel_dir == d or rel_dir.startswith(d + os.sep) for d in dirs_to_process):
             continue
 
-        for file in files:
-            input_path = os.path.join(root, file)
+        for file_name in files:
+            if file_name.endswith(SKIP_FILE_SUFFIXES):
+                continue
+
+            input_path = os.path.join(root, file_name)
             relative_path = os.path.relpath(input_path, input_dir)
             output_path = os.path.join(output_dir, relative_path)
-            destination_dir = os.path.dirname(output_path)
-            os.makedirs(destination_dir, exist_ok=True)
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-            if file.endswith('.py'):
-                # Process Python files
+            if file_name.endswith(".py"):
                 process_file(input_path, output_path, mode)
             else:
-                # Copy other files without processing
                 shutil.copy2(input_path, output_path)
-
-def create_requirements_txt(input_dir: str, output_dir: str) -> None:
-    """
-    Generate a requirements.txt file for the student repository based on the input directory's dependencies.
-
-    Args:
-        input_dir (str): The path to the input directory (reference repository).
-        output_dir (str): The path to the output directory (student repository).
-    """
-    try:
-        import pipreqs  # Ensure pipreqs is installed
-    except ImportError:
-        print("pipreqs is not installed in the current environment. Installing now...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pipreqs"])
-        import pipreqs
-
-    # Find the pipreqs executable
-    pipreqs_executable = shutil.which('pipreqs')
-    if not pipreqs_executable:
-        # Try to find pipreqs in the virtual environment's Scripts directory
-        venv_scripts_dir = os.path.dirname(sys.executable)
-        pipreqs_executable = os.path.join(venv_scripts_dir, 'pipreqs')
-        if os.name == 'nt':
-            pipreqs_executable += '.exe'
-
-        if not os.path.isfile(pipreqs_executable):
-            print("Error: pipreqs executable not found.")
-            sys.exit(1)
-
-    # Generate requirements.txt using pipreqs
-    output_file = os.path.join(output_dir, 'requirements.txt')
-    command = [
-        pipreqs_executable, input_dir,
-        '--force', '--savepath', output_file
-    ]
-    try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True)
-        print(result.stdout)
-    except subprocess.CalledProcessError as e:
-        print("Error generating requirements.txt:")
-        print(e.stderr)
-        sys.exit(1)
-
 
 
 def copy_root_files(input_dir: str, output_dir: str) -> None:
     """
-    Copy root-level files like README.md and .gitignore to the output directory.
+    Copy root-level project files to the output directory.
 
     Args:
         input_dir (str): The path to the input directory.
         output_dir (str): The path to the output directory.
     """
-    for file_name in ['README.md', '.gitignore']:
+    os.makedirs(output_dir, exist_ok=True)
+    for file_name in ROOT_FILES:
         source_file = os.path.join(input_dir, file_name)
         if os.path.isfile(source_file):
             shutil.copy2(source_file, os.path.join(output_dir, file_name))
+
 
 def main() -> None:
     """
@@ -410,51 +329,37 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Process RL course files for student distribution by redacting homework and solution sections."
     )
-    parser.add_argument(
-        "input_dir",
-        type=str,
-        help="Path to the input directory (reference repository).",
-    )
-    parser.add_argument(
-        "output_dir",
-        type=str,
-        help="Path to the output directory (student repository).",
-    )
+    parser.add_argument("input_dir", type=str, help="Path to the input directory (reference repository).")
+    parser.add_argument("output_dir", type=str, help="Path to the output directory (student repository).")
     parser.add_argument(
         "--dirs",
-        nargs='+',
-        default=['rl', 'exercises', 'assignments', 'images'],
-        help="One or more directories within the input directory to process. Defaults to ['rl', 'exercises', 'assignments', 'images'].",
+        nargs="+",
+        default=DEFAULT_DIRS,
+        help="One or more directories within the input directory to process. Defaults to ['rl', 'exercises', 'assignments', 'images', 'checks'].",
     )
     parser.add_argument(
         "--mode",
-        choices=['beginner', 'advanced'],
-        default='beginner',
+        choices=["beginner", "advanced"],
+        default="beginner",
         help="Processing mode: 'beginner' or 'advanced'. Defaults to 'beginner'.",
     )
     args = parser.parse_args()
 
-    # Validate input directory
     if not os.path.isdir(args.input_dir):
         print(f"Error: Input directory '{args.input_dir}' does not exist.")
         sys.exit(1)
 
-    # Create output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
 
-    # Copy root-level files like README.md and .gitignore
     print("Copying root-level files...")
     copy_root_files(args.input_dir, args.output_dir)
 
-    # Process the specified directories
     print(f"Processing specified directories in {args.mode} mode...")
     process_directory(args.input_dir, args.output_dir, args.dirs, mode=args.mode)
 
-    # Create requirements.txt
-    print("Generating requirements.txt...")
-    create_requirements_txt(args.input_dir, args.output_dir)
-
     print("Processing complete. Student repository created successfully.")
+
 
 if __name__ == "__main__":
     main()
+

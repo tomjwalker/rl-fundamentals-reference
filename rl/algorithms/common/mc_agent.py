@@ -1,4 +1,4 @@
-from rl.algorithms.common.base_agent import BaseAgent
+﻿from rl.algorithms.common.base_agent import BaseAgent
 from rl.common.q_value_table import QValueTable
 from rl.common.results_logger import ResultsLogger
 import numpy as np
@@ -51,8 +51,6 @@ class StateActionStats:
             action (int): The action.
             importance_sampling_ratio (float): The importance sampling ratio.
         """
-        # HOMEWORK: Update the cumulative sum of importance sampling ratios
-        # C(s, a) <- C(s, a) + W
         self.stats[state][action] += importance_sampling_ratio
 
 
@@ -69,12 +67,12 @@ class MonteCarloAgent(BaseAgent):
     """
 
     def __init__(
-            self,
-            env,
-            gamma: float,
-            epsilon: float = None,
-            logger: ResultsLogger = None,
-            random_seed: int = None
+        self,
+        env,
+        gamma: float,
+        epsilon: float = None,
+        logger: ResultsLogger = None,
+        random_seed: int = None,
     ) -> None:
         super().__init__(env, gamma, random_seed)
         self.name: str = "Base Monte Carlo Agent"
@@ -82,15 +80,11 @@ class MonteCarloAgent(BaseAgent):
 
         self.logger: ResultsLogger = logger if logger else ResultsLogger()
 
-        # Initialise common Monte Carlo agent attributes
         self.q_values: Union[QValueTable, None] = None
         self.policy: Union[object, None] = None
-
         self.returns: Union[object, None] = None
         self.state_action_stats: Union[StateActionStats, None] = None
 
-        # TODO: shift to an environment-specific method?
-        # Get env shape
         self.state_shape: Tuple[int, ...] = ()
         for space in self.env.observation_space:
             self.state_shape += (space.n,)
@@ -110,7 +104,7 @@ class MonteCarloAgent(BaseAgent):
             bool: True if subelement is present, False otherwise.
         """
         for tpl in my_list:
-            if subelement == tpl[:len(subelement)]:
+            if subelement == tpl[: len(subelement)]:
                 return True
         return False
 
@@ -125,39 +119,26 @@ class MonteCarloAgent(BaseAgent):
             List[Tuple[Tuple[int, ...], int, float]]:
             The generated episode consisting of (state, action, reward) tuples.
         """
-        episode: List = []
+        episode: List[Tuple[Tuple[int, ...], int, float]] = []
 
-        # Reset environment
         if exploring_starts:
-            state, info = self.env.reset()  # S_0
-            action: int = np.random.randint(0, self.env.action_space.n)  # A_0: choice of {0, 1}
+            state, _ = self.env.reset()
+            action: int = np.random.randint(0, self.env.action_space.n)
         else:
-            state, info = self.env.reset()
+            state, _ = self.env.reset()
             action = self.act(state)
 
-        # Generate an episode
         while True:
-
-            # HOMEWORK: Make a step of the environment (c.f. Gymnasium API: https://gymnasium.farama.org/api/env/)
-            next_state, reward, terminated, truncated, info = self.env.step(action)
-
-            # HOMEWORK: Append the state, action, and reward to the episode
+            next_state, reward, terminated, truncated, _ = self.env.step(action)
             episode.append((state, action, reward))
+            self.logger.log_timestep(reward)
 
-            # HOMEWORK: establish if done (this is when either of the boolean flags terminated or truncated are True)
             done: bool = terminated or truncated
-
             if done:
                 break
 
-            # HOMEWORK: the next state becomes the current state
             state = next_state
-
-            # HOMEWORK: the next action is selected by the agent
             action = self.act(state)
-
-        # Log timestep
-        self.logger.log_timestep(reward)
 
         return episode
 
