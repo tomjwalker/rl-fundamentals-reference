@@ -13,14 +13,17 @@ This repository contains the reference implementations, assignments, and exercis
 
 ## What you'll implement
 
-| Topic | Algorithms | Environments |
-|:--|:--|:--|
-| [K-Armed Bandits](assignments/bandits.md) | Epsilon-greedy, optimistic initial values | Sutton & Barto k-armed bandit testbed |
-| [Analytic solutions to MDPs](assignments/markov_decision_processes.md) | Bellman equations as linear systems | [Frozen Lake](https://gymnasium.farama.org/environments/toy_text/frozen_lake/) |
-| [Dynamic Programming](assignments/dynamic_programming.md) | Policy iteration, value iteration | Jack's Car Rental |
-| [Monte Carlo](assignments/monte_carlo.md) | MC prediction and control | [Blackjack](https://gymnasium.farama.org/environments/toy_text/blackjack/) |
-| [Temporal Difference](assignments/temporal_difference.md) | Sarsa, Q-learning, Expected Sarsa | [Cliff Walking](https://gymnasium.farama.org/environments/toy_text/cliff_walking/) |
-| [Planning](assignments/planning.md) | Dyna-Q, Dyna-Q+ | Planning mazes |
+| Topic | [K-Armed Bandits](assignments/bandits.md) | [Analytic solutions to MDPs](assignments/markov_decision_processes.md) | [Dynamic Programming](assignments/dynamic_programming.md) |
+|:--|:--:|:--:|:--:|
+| Preview | ![Epsilon Sweep Experiment Results](./images/bandits/kab_testbed.png) | ![Frozen Lake transition diagram](./images/markov_decision_process/trans_diagram.png) | ![Value iteration results](./images/dynamic_programming/value_iteration.png) |
+| Algorithms | Investigate epsilon-greedy and optimistic initial values. | Express Bellman equations as simultaneous equations and solve them with `numpy.linalg`. | Implement policy iteration and value iteration. |
+| Environments | Sutton & Barto k-armed bandit testbed | [Frozen Lake](https://gymnasium.farama.org/environments/toy_text/frozen_lake/) | Jack's Car Rental |
+
+| Topic | [Monte Carlo](assignments/monte_carlo.md) | [Temporal Difference](assignments/temporal_difference.md) | [Planning](assignments/planning.md) |
+|:--|:--:|:--:|:--:|
+| Preview | ![Monte Carlo results](./images/monte_carlo/detail.png) | ![Temporal difference results](./images/temporal_difference/detail.png) | ![Planning maze results](./images/planning/blocking_maze_post.png) |
+| Algorithms | Implement first-visit MC prediction and MC control. | Implement Sarsa, Q-learning, and Expected Sarsa. | Implement Dyna-Q and Dyna-Q+. |
+| Environments | [Blackjack](https://gymnasium.farama.org/environments/toy_text/blackjack/) | [Cliff Walking](https://gymnasium.farama.org/environments/toy_text/cliff_walking/) | Planning mazes |
 
 ## Python version
 
