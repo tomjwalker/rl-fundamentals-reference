@@ -31,6 +31,17 @@ Use **Python 3.11** for this repo.
 
 The dependency pins in this course are intentionally conservative so the algorithms and plots stay stable. Newer Python versions, especially 3.12+ and 3.13+, are not the target for this course repo and may fail to install some of the older numerical packages in this project.
 
+## Get the repository
+
+If you are using GitHub, copy the HTTPS clone URL for this repository from the green `Code` button and then run:
+
+```bash
+git clone <repo-url>
+cd <repo-folder>
+```
+
+If you downloaded the repository as a ZIP instead, extract it and open your terminal in the extracted project folder before running the setup commands below.
+
 ## Quick start with `uv`
 
 Run all commands from the repository root.
